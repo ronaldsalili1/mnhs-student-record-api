@@ -3,7 +3,7 @@
 		"name": "mnhs-student-record-api",
 		"run_as_user": "deploy",
 		"cwd": "/home/deploy/mnhs-student-record-api",
-		"script": "./src/index.js",
+		"script": "./index.js",
 		"log_date_format": "YYYY-MM-DD HH:mm:ss:SSS Z",
 		"error_file": "/home/deploy/log/mnhs-student-record-api/pm2-resource-error.log",
 		"out_file": "/home/deploy/log/mnhs-student-record-api/pm2-resource-output.log",
