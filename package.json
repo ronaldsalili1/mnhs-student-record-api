@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon --env-file=.env src/index.js",
     "start": "node src/index.js",
-    "init:data": "node --env-file=.env scripts/dummy_data/index.js"
+    "init:data": "node --env-file=.env scripts/dummy_data/index.js",
+    "build:server": "node server/index.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.7.0",

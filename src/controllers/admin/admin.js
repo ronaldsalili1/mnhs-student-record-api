@@ -98,7 +98,7 @@ export const updateAdminById = async (c) => {
         middle_name,
         suffix,
         roles,
-        status
+        status,
     } = adminBody;
 
     const existingAdmin = await Admin.findById(id);
