@@ -7,7 +7,7 @@ import initializeMongo from './bin/mongo.js';
 import routes from './routes/routes.js';
 
 const app = new Hono();
-const port = process.env.PORT || 3000;
+const port = process.env.API_PORT || 3000;
 
 app.get('/', (c) => c.text('Hello Hono!'));
 
