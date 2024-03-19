@@ -6,4 +6,15 @@ export default {
     user: {
         status: ['enabled', 'disabled'],
     },
+    notificationEnum: {
+        channel: ['email', 'sms'],
+        type: [
+            'account_creation',
+        ],
+        status: [
+            'queued',
+            'cancelled',
+            'sent',
+        ],
+    },
 };

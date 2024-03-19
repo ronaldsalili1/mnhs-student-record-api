@@ -1,10 +1,10 @@
+import statusCodes from '../../constants/enums/statusCodes.js';
 import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
 import School from '../../models/school.js';
 
 export const getSchool = async (c) => {
     const school = await School.findOne().lean();
 
-    c.status(200);
     return c.json(generateResponse(200, 'Success', { school }));
 };
 
@@ -18,7 +18,7 @@ export const createSchool = async (c) => {
 
     const school = await School.findOne().lean();
     if (school) {
-        c.status(409);
+        c.status(statusCodes.CONFLICT);
         return c.json(generateRecordExistsReponse('School'));
     }
 
@@ -29,7 +29,7 @@ export const createSchool = async (c) => {
 
     await newSchool.save();
 
-    c.status(201);
+    c.status(statusCodes.CREATED);
     return c.json(generateResponse(200, 'Success', { school: newSchool }));
 };
 
@@ -43,7 +43,7 @@ export const updateSchool = async (c) => {
 
     const school = await School.findOne();
     if (!school) {
-        c.status(404);
+        c.status(statusCodes.NOT_FOUND);
         return c.json(generateRecordNotExistsReponse('School'));
     }
 
@@ -53,6 +53,5 @@ export const updateSchool = async (c) => {
 
     await school.save();
 
-    c.status(200);
     return c.json(generateResponse(200, 'Success', { school }));
 };

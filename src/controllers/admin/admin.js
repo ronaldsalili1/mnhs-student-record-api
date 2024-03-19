@@ -1,7 +1,10 @@
 import bcrypt from 'bcrypt';
 
+import statusCodes from '../../constants/enums/statusCodes.js';
 import Admin from '../../models/admin.js';
-import { generateRecordExistsReponse, generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
+import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
+import { generateRandomString } from '../../helpers/general.js';
+import { publish } from '../../helpers/rabbitmq.js';
 
 export const getAdmins = async (c) => {
     const { page = 1, limit = 10 } = c.req.query();
@@ -19,8 +22,7 @@ export const getAdmins = async (c) => {
         delete admin.password;
     }
 
-    c.status(200);
-    return c.json(generateResponse(200, 'Success', {
+    return c.json(generateResponse(statusCodes.OK, 'Success', {
         total,
         page,
         limit,
@@ -34,13 +36,12 @@ export const getAdminById = async (c) => {
 
     const admin = await Admin.findById(id).lean();
     if (!admin) {
-        c.status(401);
-        return c.json(generateUnauthorizedReponse());
+        c.status(statusCodes.NOT_FOUND);
+        return c.json(generateRecordNotExistsReponse('Admin'));
     }
 
     delete admin.password;
 
-    c.status(200);
     return c.json(generateResponse(200, 'Success', { admin }));
 };
 
@@ -59,13 +60,31 @@ export const createAdmin = async (c) => {
     const trimmedEmail = email.trim();
     const adminExist = await Admin.exists({ email: trimmedEmail });
     if (adminExist) {
-        c.status(409);
+        c.status(statusCodes.CONFLICT);
         return c.json(generateRecordExistsReponse('Admin'));
     }
 
     const saltRounds = 10;
-    // TODO: Refactor the password
-    const password = await bcrypt.hash('password', saltRounds);
+
+    let password;
+    if (process.env.NODE_ENV === 'development') {
+        password = await bcrypt.hash('password', saltRounds);
+    } else {
+        const plainPassword = generateRandomString(6);
+        password = await bcrypt.hash(plainPassword, saltRounds);
+
+        try {
+            await publish('spawn_notification', {
+                type: 'account_creation',
+                to: email,
+                password: plainPassword,
+                first_name,
+                last_name,
+            });
+        } catch (error) {
+            return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send account creation notification'));
+        }
+    }
 
     const newAdmin = new Admin();
     newAdmin.email = email;
@@ -83,7 +102,7 @@ export const createAdmin = async (c) => {
     const adminObject = newAdmin.toObject();
     delete adminObject.password;
 
-    c.status(201);
+    c.status(statusCodes.CREATED);
     return c.json(generateResponse(200, 'Success', { admin: adminObject }));
 };
 
@@ -102,6 +121,10 @@ export const updateAdminById = async (c) => {
     } = adminBody;
 
     const existingAdmin = await Admin.findById(id);
+    if (!existingAdmin) {
+        c.status(statusCodes.NOT_FOUND);
+        return c.json(generateRecordNotExistsReponse('Admin'));
+    }
 
     existingAdmin.email = email;
     existingAdmin.status = 'enabled';

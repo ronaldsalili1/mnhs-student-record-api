@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 
 import Admin from '../../models/admin.js';
 import { generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
+import statusCodes from '../../constants/enums/statusCodes.js';
 
 export const login = async (c) => {
     const { email, password } = await c.req.json();
@@ -16,13 +17,13 @@ export const login = async (c) => {
     }).lean();
 
     if (!admin) {
-        c.status(401);
+        c.status(statusCodes.UNAUTHORIZED);
         return c.json(generateUnauthorizedReponse());
     }
 
     const passwordMatched = await bcrypt.compare(password, admin.password);
     if (!passwordMatched) {
-        c.status(401);
+        c.status(statusCodes.UNAUTHORIZED);
         return c.json(generateUnauthorizedReponse());
     }
 

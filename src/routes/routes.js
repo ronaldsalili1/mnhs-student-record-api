@@ -3,8 +3,8 @@ import adminAdmins from './admin/admins.js';
 import adminAuth from './admin/auth.js';
 import adminSchool from './admin/school.js';
 
-// App Routes
-import teacherTests from './teacher/tests.js';
+// Worker Routes
+import workerNotifications from './worker/notifications.js';
 
 export default [
     // Admin Routes
@@ -13,8 +13,9 @@ export default [
         adminAuth,
         adminSchool,
     ],
-    // Teacher Routes
+
+    // Worker Routes
     [
-        teacherTests,
+        workerNotifications,
     ],
 ];

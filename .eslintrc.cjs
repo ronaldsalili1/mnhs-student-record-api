@@ -30,6 +30,7 @@ module.exports = {
         'import/no-unresolved': 'off',
         'no-console': 'off',
         'no-continue': 'off',
+        'no-plusplus': 'off',
         'no-restricted-syntax': 'off',
         'no-shadow': 'off',
         'no-underscore-dangle': 'off',
