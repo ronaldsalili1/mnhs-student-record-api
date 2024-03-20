@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 
 import statusCodes from '../../constants/enums/statusCodes.js';
 import Admin from '../../models/admin.js';
-import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
+import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
 import { generateRandomString } from '../../helpers/general.js';
 import { publish } from '../../helpers/rabbitmq.js';
 
