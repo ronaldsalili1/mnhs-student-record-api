@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 
 import statusCodes from '../../constants/enums/statusCodes.js';
 import Admin from '../../models/admin.js';
-import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
+import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
 import { generateRandomString } from '../../helpers/general.js';
 import { publish } from '../../helpers/rabbitmq.js';
 
@@ -118,6 +118,9 @@ export const updateAdminById = async (c) => {
         suffix,
         roles,
         status,
+        current_password,
+        new_password_1,
+        new_password_2,
     } = adminBody;
 
     const existingAdmin = await Admin.findById(id);
@@ -126,8 +129,32 @@ export const updateAdminById = async (c) => {
         return c.json(generateRecordNotExistsReponse('Admin'));
     }
 
+    if (
+        (current_password && current_password !== '')
+        || (new_password_1 && new_password_1 !== '')
+        || (new_password_2 && new_password_2 !== '')
+    ) {
+        // Check if current password is valid
+        const passwordMatched = await bcrypt.compare(current_password, existingAdmin.password);
+        if (!passwordMatched) {
+            c.status(statusCodes.FORBIDDEN);
+            return c.json(generateResponse(403, 'Current password is incorrect'));
+        }
+
+        // Check if new_password_1 and new_password_1 matched
+        if (new_password_1 !== new_password_2) {
+            c.status(statusCodes.FORBIDDEN);
+            return c.json(generateResponse(403, 'The new password and the confirm password did not match'));
+        }
+
+        // Hash new password
+        const saltRounds = 10;
+        const newPassword = await bcrypt.hash(new_password_1, saltRounds);
+
+        existingAdmin.password = newPassword;
+    }
+
     existingAdmin.email = email;
-    existingAdmin.status = 'enabled';
     existingAdmin.last_name = last_name;
     existingAdmin.first_name = first_name;
     existingAdmin.middle_name = middle_name;
