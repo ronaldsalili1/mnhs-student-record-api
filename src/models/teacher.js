@@ -17,9 +17,9 @@ const schema = new Schema(
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
-        collection: 'admin',
+        collection: 'teacher',
         versionKey: false,
     },
 );
 
-export default mongoose.model('Admin', schema);
+export default mongoose.model('Teacher', schema);

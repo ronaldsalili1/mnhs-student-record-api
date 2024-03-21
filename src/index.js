@@ -11,8 +11,9 @@ const app = new Hono();
 const port = config.api.port || 3000;
 
 // Middlewares
+const origin = [config.admin.host, config.teacher.host, config.student.host];
 app.use('*', cors({
-    origin: [config.admin.host, config.teacher.host, config.student.host],
+    origin,
     credentials: true,
 }));
 app.use('*', logger());

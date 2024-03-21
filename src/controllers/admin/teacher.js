@@ -18,8 +18,13 @@ export const getTeachers = async (c) => {
     const query = {
         ...(status && { status }),
         ...(keyword && {
-            name: { $regex: keyword, $options: 'i' },
-            email: { $regex: keyword, $options: 'i' },
+            $or: [
+                { first_name: { $regex: keyword, $options: 'i' } },
+                { last_name: { $regex: keyword, $options: 'i' } },
+                { middle_name: { $regex: keyword, $options: 'i' } },
+                { suffix: { $regex: keyword, $options: 'i' } },
+                { email: { $regex: keyword, $options: 'i' } },
+            ],
         }),
     };
 
@@ -90,7 +95,7 @@ export const createTeacher = async (c) => {
                 password: plainPassword,
                 first_name,
                 last_name,
-                link: `${config.teacher.host}/login`,
+                link: `${config.teacher.host}${config.teacher.prefix}/login`,
             });
         } catch (error) {
             return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send account creation notification'));
