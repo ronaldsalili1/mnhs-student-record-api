@@ -3,7 +3,7 @@ export default {
         status: ['enabled', 'disabled'],
         roles: ['superadmin', 'principal', 'head_teacher'],
     },
-    user: {
+    teacher: {
         status: ['enabled', 'disabled'],
     },
     notificationEnum: {

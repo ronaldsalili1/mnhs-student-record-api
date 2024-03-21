@@ -3,6 +3,7 @@ import { sign } from 'hono/jwt';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import dayjs from 'dayjs';
 
+import config from '../../config/index.js';
 import Admin from '../../models/admin.js';
 import { generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
 import statusCodes from '../../constants/enums/statusCodes.js';
@@ -47,7 +48,7 @@ export const login = async (c) => {
         maxAge: TOKEN_TTL,
         ...(NODE_ENV !== 'development' && {
             secure: true,
-            domain: process.env.DOMAIN,
+            domain: config.api.domain,
             sameSite: 'Strict',
         }),
 

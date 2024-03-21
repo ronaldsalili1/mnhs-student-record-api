@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 
+import config from '../../config/index.js';
 import statusCodes from '../../constants/enums/statusCodes.js';
 import Admin from '../../models/admin.js';
 import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
@@ -61,7 +62,7 @@ export const createAdmin = async (c) => {
     const adminExist = await Admin.exists({ email: trimmedEmail });
     if (adminExist) {
         c.status(statusCodes.CONFLICT);
-        return c.json(generateRecordExistsReponse('Admin'));
+        return c.json(generateRecordExistsReponse('Admin with the same email'));
     }
 
     const saltRounds = 10;
@@ -80,6 +81,7 @@ export const createAdmin = async (c) => {
                 password: plainPassword,
                 first_name,
                 last_name,
+                link: `${config.admin.host}/login`,
             });
         } catch (error) {
             return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send account creation notification'));
@@ -127,6 +129,17 @@ export const updateAdminById = async (c) => {
     if (!existingAdmin) {
         c.status(statusCodes.NOT_FOUND);
         return c.json(generateRecordNotExistsReponse('Admin'));
+    }
+
+    // Check if email already exist
+    const trimmedEmail = email.trim();
+    const adminEmailExist = await Admin.exists({
+        _id: { $ne: id },
+        email: trimmedEmail,
+    });
+    if (adminEmailExist) {
+        c.status(statusCodes.CONFLICT);
+        return c.json(generateRecordExistsReponse('Admin with the same email'));
     }
 
     if (

@@ -4,9 +4,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --env-file=.env src/index.js",
-    "start": "node src/index.js",
-    "init:data": "node --env-file=.env scripts/dummy_data/index.js",
+    "dev": "NODE_ENV=development nodemon --env-file=.env src/index.js",
+    "init:data_development": "NODE_ENV=development node --env-file=.env scripts/dummy_data/index.js",
+    "init:data_production": "NODE_ENV=production node scripts/dummy_data/index.js",
     "build:server": "node server/index.js"
   },
   "dependencies": {

@@ -3,17 +3,20 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 
+import config from './config/index.js';
 import initializeMongo from './bin/mongo.js';
 import routes from './routes/routes.js';
 
 const app = new Hono();
-const port = process.env.API_PORT || 3000;
+const port = config.api.port || 3000;
+
+console.log('🚀 ~ config:', config);
 
 app.get('/', (c) => c.text('Hello Hono!'));
 
 // Middlewares
 app.use('*', cors({
-    origin: [process.env.ADMIN_PANEL, process.env.TEACHER_PANEL, process.env.STUDENT_PANEL],
+    origin: [config.admin.host, config.teacher.host, config.student.host],
     credentials: true,
 }));
 app.use('*', logger());
