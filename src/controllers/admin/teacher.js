@@ -194,3 +194,10 @@ export const updateTeacherById = async (c) => {
 
     return c.json(generateResponse(200, 'Success', { teacher: teacherObject }));
 };
+
+// Special endpoint
+export const getTeacherOptions = async (c) => {
+    const teachers = await Teacher.find().sort({ last_name: 1 });
+
+    return c.json(generateResponse(200, 'Success', { teachers }));
+};
