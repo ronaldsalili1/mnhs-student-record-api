@@ -10,10 +10,6 @@ import routes from './routes/routes.js';
 const app = new Hono();
 const port = config.api.port || 3000;
 
-console.log('🚀 ~ config:', config);
-
-app.get('/', (c) => c.text('Hello Hono!'));
-
 // Middlewares
 app.use('*', cors({
     origin: [config.admin.host, config.teacher.host, config.student.host],
