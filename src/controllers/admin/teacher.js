@@ -197,7 +197,11 @@ export const updateTeacherById = async (c) => {
 
 // Special endpoint
 export const getTeacherOptions = async (c) => {
-    const teachers = await Teacher.find().sort({ last_name: 1 });
+    const teachers = await Teacher.find().sort({ last_name: 1 }).lean();
+
+    // Remove password in response
+    // eslint-disable-next-line no-param-reassign
+    teachers.forEach((teacher) => delete teacher.password);
 
     return c.json(generateResponse(200, 'Success', { teachers }));
 };

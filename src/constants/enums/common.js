@@ -6,7 +6,7 @@ export default {
     teacher: {
         status: ['enabled', 'disabled'],
     },
-    notificationEnum: {
+    notification: {
         channel: ['email', 'sms'],
         type: [
             'account_creation',
@@ -16,5 +16,8 @@ export default {
             'cancelled',
             'sent',
         ],
+    },
+    subject: {
+        type: ['core', 'applied', 'specialized'],
     },
 };

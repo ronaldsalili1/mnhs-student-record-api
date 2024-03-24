@@ -5,9 +5,9 @@ const { Schema } = mongoose;
 
 const schema = new Schema(
     {
-        channel: { type: String, enum: commonEnums.notificationEnum.channel, required: true },
-        type: { type: String, enum: commonEnums.notificationEnum.type, required: true },
-        status: { type: String, enum: commonEnums.notificationEnum.status, required: true },
+        channel: { type: String, enum: commonEnums.notification.channel, required: true },
+        type: { type: String, enum: commonEnums.notification.type, required: true },
+        status: { type: String, enum: commonEnums.notification.status, required: true },
         to: { type: String, required: true },
         from: { type: String, required: true },
         cc: { type: String },

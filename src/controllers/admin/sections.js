@@ -27,7 +27,17 @@ export const getSections = async (c) => {
         .limit(limit)
         .skip(skip)
         .sort({ name: 1 })
+        .populate('teacher_id')
         .lean();
+
+    // Change the name teacher_id to teacher
+    sections.forEach((section) => {
+        section.teacher = section.teacher_id;
+        delete section.teacher_id;
+
+        // Remove the password hash
+        delete section.teacher.password;
+    });
 
     return c.json(generateResponse(statusCodes.OK, 'Success', {
         total,
