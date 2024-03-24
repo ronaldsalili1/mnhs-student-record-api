@@ -82,7 +82,7 @@ export const createTeacher = async (c) => {
 
     const saltRounds = 10;
     let password;
-    if (process.env.NODE_ENV === 'developmentt') {
+    if (process.env.NODE_ENV === 'development') {
         password = await bcrypt.hash('password', saltRounds);
     } else {
         const plainPassword = generateRandomString(6);
