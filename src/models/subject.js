@@ -7,7 +7,7 @@ const { Schema } = mongoose;
 const schema = new Schema(
     {
         name: { type: String, required: true },
-        type: { type: Number, enum: commonEnums.subject.type, required: true },
+        type: { type: String, enum: commonEnums.subject.type, required: true },
         created_by: { type: Schema.Types.ObjectId },
         updated_by: { type: Schema.Types.ObjectId },
     },
