@@ -5,6 +5,7 @@ import adminSchool from './admin/school.js';
 import adminTeachers from './admin/teachers.js';
 import adminSections from './admin/sections.js';
 import adminSubjects from './admin/subjects.js';
+import adminSemesters from './admin/semesters.js';
 
 // Worker Routes
 import workerNotifications from './worker/notifications.js';
@@ -18,6 +19,7 @@ export default [
         adminTeachers,
         adminSections,
         adminSubjects,
+        adminSemesters,
     ],
 
     // Worker Routes

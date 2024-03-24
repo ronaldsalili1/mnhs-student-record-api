@@ -20,4 +20,8 @@ export default {
     subject: {
         type: ['core', 'applied', 'specialized'],
     },
+    semester: {
+        number: [1, 2],
+        status: ['active', 'ended', 'upcoming'],
+    },
 };
