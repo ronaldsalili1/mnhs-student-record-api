@@ -107,3 +107,10 @@ export const updateSubjectById = async (c) => {
 
     return c.json(generateResponse(200, 'Success', { subject }));
 };
+
+// Special endpoint
+export const getSubjectOptions = async (c) => {
+    const subjects = await Subject.find().sort({ name: 1 }).lean();
+
+    return c.json(generateResponse(200, 'Success', { subjects }));
+};

@@ -15,7 +15,7 @@ export const getSemesters = async (c) => {
     const semesters = await Semester.find(query)
         .limit(limit)
         .skip(skip)
-        .sort({ sy_start_year: -1, term: -1 })
+        .sort({ start_at: -1, term: -1 })
         .lean();
 
     return c.json(generateResponse(statusCodes.OK, 'Success', {
@@ -45,12 +45,14 @@ export const createSemester = async (c) => {
     const {
         sy_start_year,
         sy_end_year,
+        start_at,
+        end_at,
         term,
         status,
     } = semesterBody;
 
     // Check if semester already exist
-    const semesterExist = await Semester.exists({ sy_start_year, sy_end_year, term });
+    const semesterExist = await Semester.exists({ start_at, end_at, term });
     if (semesterExist) {
         c.status(statusCodes.CONFLICT);
         return c.json(generateRecordExistsReponse('Semester'));
@@ -68,6 +70,8 @@ export const createSemester = async (c) => {
     const newSemester = new Semester();
     newSemester.sy_start_year = sy_start_year;
     newSemester.sy_end_year = sy_end_year;
+    newSemester.start_at = start_at;
+    newSemester.end_at = end_at;
     newSemester.term = term;
     newSemester.status = status;
     newSemester.created_by = admin._id;
@@ -85,6 +89,8 @@ export const updateSemesterById = async (c) => {
     const {
         sy_start_year,
         sy_end_year,
+        start_at,
+        end_at,
         term,
         status,
     } = semesterBody;
@@ -98,8 +104,8 @@ export const updateSemesterById = async (c) => {
     // Check if semester already exist
     const semesterExist = await Semester.exists({
         _id: { $ne: id },
-        sy_start_year,
-        sy_end_year,
+        start_at,
+        end_at,
         term,
     });
     if (semesterExist) {
@@ -118,6 +124,8 @@ export const updateSemesterById = async (c) => {
 
     semester.sy_start_year = sy_start_year;
     semester.sy_end_year = sy_end_year;
+    semester.start_at = start_at;
+    semester.end_at = end_at;
     semester.term = term;
     semester.status = status;
     semester.updated_by = admin._id;
@@ -129,7 +137,7 @@ export const updateSemesterById = async (c) => {
 
 // Special endpoint
 export const getSemesterOptions = async (c) => {
-    const semesters = await Semester.find().sort({ sy_start_year: -1, term: -1 }).lean();
+    const semesters = await Semester.find().sort({ start_at: -1, term: -1 }).lean();
 
     return c.json(generateResponse(200, 'Success', { semesters }));
 };

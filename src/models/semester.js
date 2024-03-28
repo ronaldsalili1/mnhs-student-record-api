@@ -6,8 +6,10 @@ const { Schema } = mongoose;
 
 const schema = new Schema(
     {
-        sy_start_year: { type: Date, required: true },
-        sy_end_year: { type: Date, required: true },
+        sy_start_year: { type: Number, required: true },
+        sy_end_year: { type: Number, required: true },
+        start_at: { type: Date, required: true },
+        end_at: { type: Date, required: true },
         term: { type: Number, required: true, enum: commonEnum.semester.number },
         status: { type: String, required: true, enum: commonEnum.semester.status },
         created_by: { type: Schema.Types.ObjectId },

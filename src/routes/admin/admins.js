@@ -5,7 +5,7 @@ import {
     getAdminById,
     createAdmin,
     updateAdminById,
-} from '../../controllers/admin/admin.js';
+} from '../../controllers/admin/admins.js';
 import checkAdminToken from '../../middlewares/checkAdminToken.js';
 import checkSuperAdminRole from '../../middlewares/checkSuperAdminRole.js';
 

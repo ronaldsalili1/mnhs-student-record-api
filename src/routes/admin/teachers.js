@@ -7,7 +7,7 @@ import {
     getTeacherOptions,
     getTeachers,
     updateTeacherById,
-} from '../../controllers/admin/teacher.js';
+} from '../../controllers/admin/teachers.js';
 
 const teachers = new Hono().basePath('/admin/teachers');
 

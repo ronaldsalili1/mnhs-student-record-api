@@ -7,7 +7,7 @@ import {
     getSemesterOptions,
     getSemesters,
     updateSemesterById,
-} from '../../controllers/admin/semester.js';
+} from '../../controllers/admin/semesters.js';
 
 const semesters = new Hono().basePath('/admin/semesters');
 
