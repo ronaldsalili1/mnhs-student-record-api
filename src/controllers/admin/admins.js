@@ -81,7 +81,7 @@ export const createAdmin = async (c) => {
                 password: plainPassword,
                 first_name,
                 last_name,
-                link: `${config.admin.host}${config.admin.prefix}/login`,
+                link: `${config.admin.host}/login`,
             });
         } catch (error) {
             return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send account creation notification'));

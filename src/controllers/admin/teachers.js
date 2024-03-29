@@ -95,7 +95,7 @@ export const createTeacher = async (c) => {
                 password: plainPassword,
                 first_name,
                 last_name,
-                link: `${config.teacher.host}${config.teacher.prefix}/login`,
+                link: `${config.teacher.host}/login`,
             });
         } catch (error) {
             return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send account creation notification'));
