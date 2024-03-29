@@ -6,7 +6,7 @@
 		"script": "./src/index.js",
 		"log_date_format": "YYYY-MM-DD HH:mm:ss:SSS Z",
 		"env": {
-			"NODE_ENV": "testing"
+			"NODE_ENV": "production"
 		},
 		"error_file": "/home/deploy/log/mnhs-student-record-api/pm2-resource-error.log",
 		"out_file": "/home/deploy/log/mnhs-student-record-api/pm2-resource-output.log",
