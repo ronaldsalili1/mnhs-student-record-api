@@ -16,6 +16,10 @@ export const getSubjectTeachers = async (c) => {
         ...(teacher_id && { teacher_id }),
         ...(subject_id && { subject_id }),
     };
+    console.log({
+        ...(sort_by === 'subject' && { 'subject_id.name': 1, start_at: 1 }),
+        ...(sort_by === 'teacher' && { 'teacher_id.last_name': 1, start_at: 1 }),
+    });
 
     const total = await SubjectTeacher.countDocuments(query);
     const subjectTeachers = await SubjectTeacher.find(query)
@@ -26,7 +30,6 @@ export const getSubjectTeachers = async (c) => {
         .sort({
             ...(sort_by === 'subject' && { 'subject_id.name': 1 }),
             ...(sort_by === 'teacher' && { 'teacher_id.last_name': 1 }),
-            start_at: 1,
         })
         .lean();
 
