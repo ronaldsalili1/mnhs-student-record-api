@@ -1,4 +1,5 @@
 export default {
+    sex: ['male', 'female'],
     admin: {
         status: ['enabled', 'disabled'],
         roles: ['superadmin', 'principal', 'head_teacher'],
@@ -23,5 +24,9 @@ export default {
     semester: {
         number: [1, 2],
         status: ['active', 'ended', 'upcoming'],
+    },
+    student: {
+        track: ['academic', 'tvl'],
+        strand: ['com_sys_serv'],
     },
 };
