@@ -8,13 +8,13 @@ import {
     updateSubjectTeacherById,
 } from '../../controllers/admin/subject_teachers.js';
 
-const subjectTeacher = new Hono().basePath('/admin/subject-teachers');
+const subjectTeachers = new Hono().basePath('/admin/subject-teachers');
 
-subjectTeacher.use('*', checkAdminToken);
+subjectTeachers.use('*', checkAdminToken);
 
-subjectTeacher.get('/', getSubjectTeachers);
-subjectTeacher.get('/:subjectTeacherId', getSubjectTeacherById);
-subjectTeacher.post('/', createSubjectTeacher);
-subjectTeacher.patch('/:subjectTeacherId', updateSubjectTeacherById);
+subjectTeachers.get('/', getSubjectTeachers);
+subjectTeachers.get('/:subjectTeacherId', getSubjectTeacherById);
+subjectTeachers.post('/', createSubjectTeacher);
+subjectTeachers.patch('/:subjectTeacherId', updateSubjectTeacherById);
 
-export default subjectTeacher;
+export default subjectTeachers;

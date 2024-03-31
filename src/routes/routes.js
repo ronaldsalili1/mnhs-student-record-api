@@ -8,6 +8,8 @@ import adminSubjects from './admin/subjects.js';
 import adminSubjectTeachers from './admin/subject_teachers.js';
 import adminSemesters from './admin/semesters.js';
 import adminStudents from './admin/students.js';
+import adminStudentShsEligibilities from './admin/student_shs_eligibilities.js';
+import adminSubjectStudents from './admin/subject_students.js';
 
 // Worker Routes
 import workerNotifications from './worker/notifications.js';
@@ -24,6 +26,8 @@ export default [
         adminSemesters,
         adminSubjectTeachers,
         adminStudents,
+        adminStudentShsEligibilities,
+        adminSubjectStudents,
     ],
 
     // Worker Routes

@@ -6,17 +6,20 @@ import { cors } from 'hono/cors';
 import config from './config/index.js';
 import initializeMongo from './bin/mongo.js';
 import routes from './routes/routes.js';
+import statusCodes from './constants/enums/statusCodes.js';
+import { generateResponse } from './helpers/response.js';
 
 const app = new Hono();
 const port = config.api.port || 3000;
 
 // Middlewares
+app.use('*', logger());
+
 const origin = [config.admin.host, config.teacher.host, config.student.host];
 app.use('*', cors({
     origin,
     credentials: true,
 }));
-app.use('*', logger());
 
 // Routes
 const useRoutes = (routes) => {
@@ -30,6 +33,12 @@ const useRoutes = (routes) => {
     }
 };
 useRoutes(routes);
+
+// Route not found
+app.use('*', (c) => {
+    c.status(statusCodes.NOT_FOUND);
+    return c.json(generateResponse(404, 'Route does not exist'));
+});
 
 console.log('[!] Starting server');
 

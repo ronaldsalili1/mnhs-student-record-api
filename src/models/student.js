@@ -6,8 +6,7 @@ const { Schema } = mongoose;
 
 const schema = new Schema(
     {
-        student_shs_eligibility_id: { type: Schema.Types.ObjectId, required: true, ref: 'StudentShsEligibility' },
-        email: { type: String, unique: true },
+        email: { type: String },
         guardian_email: { type: String },
         last_name: { type: String, required: true },
         first_name: { type: String, required: true },

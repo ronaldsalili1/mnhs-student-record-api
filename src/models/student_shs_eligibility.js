@@ -4,6 +4,7 @@ const { Schema } = mongoose;
 
 const schema = new Schema(
     {
+        student_id: { type: Schema.Types.ObjectId, required: true, ref: 'Student' },
         hs_completer: { type: Boolean },
         hs_gen_avg: { type: Number },
         jhs_completer: { type: Boolean },
