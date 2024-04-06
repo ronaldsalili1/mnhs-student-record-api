@@ -19,6 +19,6 @@ semesters.post('/', createSemester);
 semesters.patch('/:semesterId', updateSemesterById);
 
 // Special endpoints
-semesters.get('/all/options', getSemesterOptions);
+semesters.get('/options/all', getSemesterOptions);
 
 export default semesters;

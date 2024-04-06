@@ -36,7 +36,7 @@ export const getSemesterById = async (c) => {
         return c.json(generateRecordNotExistsReponse('Semester'));
     }
 
-    return c.json(generateResponse(200, 'Success', { semester }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { semester }));
 };
 
 export const createSemester = async (c) => {
@@ -79,7 +79,7 @@ export const createSemester = async (c) => {
     await newSemester.save();
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { semester: newSemester }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { semester: newSemester }));
 };
 
 export const updateSemesterById = async (c) => {
@@ -132,12 +132,12 @@ export const updateSemesterById = async (c) => {
 
     await semester.save();
 
-    return c.json(generateResponse(200, 'Success', { semester }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { semester }));
 };
 
 // Special endpoint
 export const getSemesterOptions = async (c) => {
     const semesters = await Semester.find().sort({ start_at: -1, term: -1 }).lean();
 
-    return c.json(generateResponse(200, 'Success', { semesters }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { semesters }));
 };

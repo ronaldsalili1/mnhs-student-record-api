@@ -27,17 +27,7 @@ export const getSections = async (c) => {
         .limit(limit)
         .skip(skip)
         .sort({ name: 1 })
-        .populate('teacher_id')
         .lean();
-
-    // Change the name teacher_id to teacher
-    sections.forEach((section) => {
-        section.teacher = section.teacher_id;
-        delete section.teacher_id;
-
-        // Remove the password hash
-        delete section.teacher.password;
-    });
 
     return c.json(generateResponse(statusCodes.OK, 'Success', {
         total,
@@ -57,7 +47,7 @@ export const getSectionById = async (c) => {
         return c.json(generateRecordNotExistsReponse('Section'));
     }
 
-    return c.json(generateResponse(200, 'Success', { section }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { section }));
 };
 
 export const createSection = async (c) => {
@@ -66,7 +56,6 @@ export const createSection = async (c) => {
     const {
         grade_level,
         name,
-        teacher_id,
     } = sectionBody;
 
     const parsedName = name.trim().toLowerCase();
@@ -79,13 +68,12 @@ export const createSection = async (c) => {
     const newSection = new Section();
     newSection.grade_level = grade_level;
     newSection.name = name;
-    newSection.teacher_id = teacher_id;
     newSection.created_by = admin._id;
 
     await newSection.save();
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { section: newSection }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { section: newSection }));
 };
 
 export const updateSectionById = async (c) => {
@@ -95,7 +83,6 @@ export const updateSectionById = async (c) => {
     const {
         grade_level,
         name,
-        teacher_id,
     } = sectionBody;
 
     const section = await Section.findById(id);
@@ -116,10 +103,9 @@ export const updateSectionById = async (c) => {
 
     section.grade_level = grade_level;
     section.name = name;
-    section.teacher_id = teacher_id;
     section.updated_by = admin._id;
 
     await section.save();
 
-    return c.json(generateResponse(200, 'Success', { section }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { section }));
 };

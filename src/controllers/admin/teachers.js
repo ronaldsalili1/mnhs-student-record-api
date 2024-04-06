@@ -59,7 +59,7 @@ export const getTeacherById = async (c) => {
 
     delete teacher.password;
 
-    return c.json(generateResponse(200, 'Success', { teacher }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { teacher }));
 };
 
 export const createTeacher = async (c) => {
@@ -118,7 +118,7 @@ export const createTeacher = async (c) => {
     delete teacherObject.password;
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { teacher: teacherObject }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { teacher: teacherObject }));
 };
 
 export const updateTeacherById = async (c) => {
@@ -192,7 +192,7 @@ export const updateTeacherById = async (c) => {
     const teacherObject = existingTeacher.toObject();
     delete teacherObject.password;
 
-    return c.json(generateResponse(200, 'Success', { teacher: teacherObject }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { teacher: teacherObject }));
 };
 
 // Special endpoint
@@ -203,5 +203,5 @@ export const getTeacherOptions = async (c) => {
     // eslint-disable-next-line no-param-reassign
     teachers.forEach((teacher) => delete teacher.password);
 
-    return c.json(generateResponse(200, 'Success', { teachers }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { teachers }));
 };

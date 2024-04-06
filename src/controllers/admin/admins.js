@@ -8,7 +8,7 @@ import { generateRandomString } from '../../helpers/general.js';
 import { publish } from '../../helpers/rabbitmq.js';
 
 export const getAdmins = async (c) => {
-    const { page = 1, limit = 10 } = c.req.query();
+    const { page, limit } = c.req.valid('query');
     const skip = limit * (page - 1);
     const query = {};
 
@@ -33,7 +33,7 @@ export const getAdmins = async (c) => {
 };
 
 export const getAdminById = async (c) => {
-    const id = c.req.param('adminId');
+    const { adminId: id } = c.req.valid('param');
 
     const admin = await Admin.findById(id).lean();
     if (!admin) {
@@ -43,7 +43,7 @@ export const getAdminById = async (c) => {
 
     delete admin.password;
 
-    return c.json(generateResponse(200, 'Success', { admin }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { admin }));
 };
 
 export const createAdmin = async (c) => {
@@ -105,7 +105,7 @@ export const createAdmin = async (c) => {
     delete adminObject.password;
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { admin: adminObject }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { admin: adminObject }));
 };
 
 export const updateAdminById = async (c) => {
@@ -181,5 +181,5 @@ export const updateAdminById = async (c) => {
     const adminObject = existingAdmin.toObject();
     delete adminObject.password;
 
-    return c.json(generateResponse(200, 'Success', { admin: adminObject }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { admin: adminObject }));
 };

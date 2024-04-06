@@ -15,3 +15,5 @@ export const generateUnauthorizedReponse = (code, message) => generateResponse(c
 export const generateInternalServerError = () => {
     generateResponse(500, 'Internal Server Error');
 };
+
+export const generateValidationErrorResponse = (message) => generateResponse(400, message);

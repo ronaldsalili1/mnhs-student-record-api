@@ -19,6 +19,6 @@ subjects.post('/', createSubject);
 subjects.patch('/:subjectId', updateSubjectById);
 
 // Special endpoints
-subjects.get('/all/options', getSubjectOptions);
+subjects.get('/options/all', getSubjectOptions);
 
 export default subjects;

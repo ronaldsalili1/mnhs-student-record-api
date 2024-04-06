@@ -19,6 +19,6 @@ teachers.post('/', createTeacher);
 teachers.patch('/:teacherId', updateTeacherById);
 
 // Special endpoints
-teachers.get('/all/options', getTeacherOptions);
+teachers.get('/options/all', getTeacherOptions);
 
 export default teachers;

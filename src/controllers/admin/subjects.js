@@ -45,7 +45,7 @@ export const getSubjectById = async (c) => {
         return c.json(generateRecordNotExistsReponse('Subject'));
     }
 
-    return c.json(generateResponse(200, 'Success', { subject }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject }));
 };
 
 export const createSubject = async (c) => {
@@ -71,7 +71,7 @@ export const createSubject = async (c) => {
     await newSubject.save();
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { subject: newSubject }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject: newSubject }));
 };
 
 export const updateSubjectById = async (c) => {
@@ -105,12 +105,12 @@ export const updateSubjectById = async (c) => {
 
     await subject.save();
 
-    return c.json(generateResponse(200, 'Success', { subject }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject }));
 };
 
 // Special endpoint
 export const getSubjectOptions = async (c) => {
     const subjects = await Subject.find().sort({ name: 1 }).lean();
 
-    return c.json(generateResponse(200, 'Success', { subjects }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subjects }));
 };

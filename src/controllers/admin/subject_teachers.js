@@ -69,7 +69,7 @@ export const getSubjectTeacherById = async (c) => {
     delete subjectTeacher.teacher_id;
     delete subjectTeacher.teacher.password;
 
-    return c.json(generateResponse(200, 'Success', { subject_teacher: subjectTeacher }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject_teacher: subjectTeacher }));
 };
 
 export const createSubjectTeacher = async (c) => {
@@ -107,7 +107,7 @@ export const createSubjectTeacher = async (c) => {
     await newSubjectTeacher.save();
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { subject_teacher: newSubjectTeacher }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject_teacher: newSubjectTeacher }));
 };
 
 export const updateSubjectTeacherById = async (c) => {
@@ -151,5 +151,5 @@ export const updateSubjectTeacherById = async (c) => {
 
     await subjectTeacher.save();
 
-    return c.json(generateResponse(200, 'Success', { subjectTeacher }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subjectTeacher }));
 };

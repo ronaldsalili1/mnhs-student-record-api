@@ -19,6 +19,6 @@ students.post('/', createStudent);
 students.patch('/:studentId', updateStudentById);
 
 // Special endpoints
-students.get('/all/options', getStudentOptions);
+students.get('/options/all', getStudentOptions);
 
 export default students;

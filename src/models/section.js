@@ -4,7 +4,6 @@ const { Schema } = mongoose;
 
 const schema = new Schema(
     {
-        teacher_id: { type: Schema.Types.ObjectId, required: true, ref: 'Teacher' },
         grade_level: { type: Number, required: true },
         name: { type: String, required: true },
         created_by: { type: Schema.Types.ObjectId },

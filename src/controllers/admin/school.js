@@ -5,7 +5,7 @@ import School from '../../models/school.js';
 export const getSchool = async (c) => {
     const school = await School.findOne().lean();
 
-    return c.json(generateResponse(200, 'Success', { school }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { school }));
 };
 
 export const createSchool = async (c) => {
@@ -30,7 +30,7 @@ export const createSchool = async (c) => {
     await newSchool.save();
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { school: newSchool }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { school: newSchool }));
 };
 
 export const updateSchool = async (c) => {
@@ -53,5 +53,5 @@ export const updateSchool = async (c) => {
 
     await school.save();
 
-    return c.json(generateResponse(200, 'Success', { school }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { school }));
 };

@@ -58,7 +58,7 @@ export const getSubjectStudentById = async (c) => {
     subjectStudent.student = subjectStudent.student_id;
     delete subjectStudent.student_id;
 
-    return c.json(generateResponse(200, 'Success', { subject_student: subjectStudent }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject_student: subjectStudent }));
 };
 
 export const createSubjectStudent = async (c) => {
@@ -115,7 +115,7 @@ export const createSubjectStudent = async (c) => {
     await newSubjectStudent.save();
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { subject_student: newSubjectStudent }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject_student: newSubjectStudent }));
 };
 
 export const updateSubjectStudentById = async (c) => {
@@ -178,7 +178,7 @@ export const updateSubjectStudentById = async (c) => {
 
     await subjectStudent.save();
 
-    return c.json(generateResponse(200, 'Success', { subject_student: subjectStudent }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject_student: subjectStudent }));
 };
 
 export const deleteSubjectStudentById = async (c) => {
@@ -190,5 +190,5 @@ export const deleteSubjectStudentById = async (c) => {
         return c.json(generateRecordNotExistsReponse('Subject student'));
     }
 
-    return c.json(generateResponse(200, 'Success', { subject_student: subjectStudent }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { subject_student: subjectStudent }));
 };

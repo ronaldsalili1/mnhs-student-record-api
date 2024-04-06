@@ -9,7 +9,7 @@ import { generateResponse, generateUnauthorizedReponse } from '../../helpers/res
 import statusCodes from '../../constants/enums/statusCodes.js';
 
 export const login = async (c) => {
-    const { email, password } = await c.req.json();
+    const { email, password } = await c.req.valid('json');
     const trimmedEmail = email.trim();
 
     const admin = await Admin.findOne({
@@ -56,13 +56,13 @@ export const login = async (c) => {
 
     delete admin.password;
 
-    return c.json(generateResponse(200, 'Success', { admin }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { admin }));
 };
 
 export const logout = async (c) => {
     deleteCookie(c, process.env.ACCESS_TOKEN_KEY);
 
-    return c.json(generateResponse(200, 'Success'));
+    return c.json(generateResponse(statusCodes.OK, 'Success'));
 };
 
 export const checkAuthStatus = async (c) => {
@@ -70,5 +70,5 @@ export const checkAuthStatus = async (c) => {
 
     delete admin.password;
 
-    return c.json(generateResponse(200, 'Success', { admin }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { admin }));
 };

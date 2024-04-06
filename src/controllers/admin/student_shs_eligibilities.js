@@ -7,7 +7,7 @@ export const getStudentShsEligibilityById = async (c) => {
 
     const studentShsEligibility = await StudentShsEligibility.findOne({ student_id: id }).lean();
 
-    return c.json(generateResponse(200, 'Success', { student_shs_eligibility: studentShsEligibility }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { student_shs_eligibility: studentShsEligibility }));
 };
 
 export const createStudentShsEligibility = async (c) => {
@@ -52,7 +52,7 @@ export const createStudentShsEligibility = async (c) => {
     await newStudentShsEligibility.save();
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { student_shs_eligibility: newStudentShsEligibility }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { student_shs_eligibility: newStudentShsEligibility }));
 };
 
 export const updateStudentShsEligibilityById = async (c) => {
@@ -103,5 +103,5 @@ export const updateStudentShsEligibilityById = async (c) => {
 
     await studentShsEligibility.save();
 
-    return c.json(generateResponse(200, 'Success', { student_shs_eligibility: studentShsEligibility }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { student_shs_eligibility: studentShsEligibility }));
 };

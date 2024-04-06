@@ -49,7 +49,7 @@ export const getStudentById = async (c) => {
         return c.json(generateRecordNotExistsReponse('Student'));
     }
 
-    return c.json(generateResponse(200, 'Success', { student }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { student }));
 };
 
 export const createStudent = async (c) => {
@@ -104,7 +104,7 @@ export const createStudent = async (c) => {
     await newStudent.save();
 
     c.status(statusCodes.CREATED);
-    return c.json(generateResponse(200, 'Success', { student: newStudent }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { student: newStudent }));
 };
 
 export const updateStudentById = async (c) => {
@@ -165,12 +165,12 @@ export const updateStudentById = async (c) => {
 
     await student.save();
 
-    return c.json(generateResponse(200, 'Success', { student }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { student }));
 };
 
 // Special endpoint
 export const getStudentOptions = async (c) => {
     const students = await Student.find().sort({ last_name: 1 }).lean();
 
-    return c.json(generateResponse(200, 'Success', { students }));
+    return c.json(generateResponse(statusCodes.OK, 'Success', { students }));
 };
