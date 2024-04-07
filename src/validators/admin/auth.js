@@ -2,7 +2,7 @@ import { z } from 'zod';
 import validator from '../../helpers/validator.js';
 
 // eslint-disable-next-line import/prefer-default-export
-export const loginValidator = () => {
+export const authJsonValidator = () => {
     const schema = z.object({
         email: z.string({
             required_error: 'Email is required',

@@ -1,8 +1,12 @@
-import statusCodes from '../constants/enums/statusCodes.js';
+import { createFactory } from 'hono/factory';
+
+import statusCodes from '../constants/statusCodes.js';
 import { generateUnauthorizedReponse } from '../helpers/response.js';
 
+const factory = createFactory();
+
 // eslint-disable-next-line consistent-return
-export default async (c, next) => {
+export default factory.createMiddleware(async (c, next) => {
     const admin = c.get('admin');
     const adminId = c.req.param('adminId');
 
@@ -12,4 +16,4 @@ export default async (c, next) => {
     }
 
     await next();
-};
+});

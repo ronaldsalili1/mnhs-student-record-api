@@ -1,9 +1,5 @@
-import development from './environments/development.js';
-import production from './environments/production.js';
+import importAll from '../helpers/importAll.js';
 
-const configs = {
-    development,
-    production,
-};
+const configs = await importAll('/config/environments');
 
 export default configs[process.env.NODE_ENV] || configs.development;

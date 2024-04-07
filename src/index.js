@@ -2,12 +2,16 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
+import { csrf } from 'hono/csrf';
 
 import config from './config/index.js';
 import initializeMongo from './bin/mongo.js';
-import routes from './routes/routes.js';
-import statusCodes from './constants/enums/statusCodes.js';
+import statusCodes from './constants/statusCodes.js';
 import { generateResponse } from './helpers/response.js';
+import importAll from './helpers/importAll.js';
+
+const adminRoutes = await importAll('/routes/admin');
+const workerRoutes = await importAll('/routes/worker');
 
 const app = new Hono();
 const port = config.api.port || 3000;
@@ -16,23 +20,29 @@ const port = config.api.port || 3000;
 app.use('*', logger());
 
 const origin = [config.admin.host, config.teacher.host, config.student.host];
+app.use('*', csrf({ origin }));
 app.use('*', cors({
     origin,
     credentials: true,
 }));
 
-// Routes
-const useRoutes = (routes) => {
-    for (const item of routes) {
-        if (!item.length) {
-            app.route('/', item);
-            continue;
-        }
-
-        useRoutes(item);
-    }
+// Use all routes
+const routes = {
+    admin: adminRoutes,
+    worker: workerRoutes,
 };
-useRoutes(routes);
+for (const routeKey in routes) {
+    if (Object.hasOwnProperty.call(routes, routeKey)) {
+        const routeGroups = routes[routeKey];
+
+        for (const routeGroupKey in routeGroups) {
+            if (Object.hasOwnProperty.call(routeGroups, routeGroupKey)) {
+                const routeGroup = routeGroups[routeGroupKey];
+                app.route(`/${routeKey}`, routeGroup);
+            }
+        }
+    }
+}
 
 // Route not found
 app.use('*', (c) => {
@@ -42,9 +52,9 @@ app.use('*', (c) => {
 
 console.log('[!] Starting server');
 
-initializeMongo();
-console.log('[!] MongoDB initialized');
-console.log(`[!] Server is running on port ${port}`);
+initializeMongo()
+    .then(() => console.log(`[!] Server is running on port ${port}`))
+    .catch((error) => console.error(error.message));
 
 serve({
     fetch: app.fetch,

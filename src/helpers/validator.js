@@ -1,6 +1,6 @@
 import { zValidator } from '@hono/zod-validator';
 
-import statusCodes from '../constants/enums/statusCodes.js';
+import statusCodes from '../constants/statusCodes.js';
 import { generateValidationErrorResponse } from './response.js';
 
 const validator = (requestContent, schema) => (

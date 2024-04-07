@@ -1,13 +1,16 @@
+import { createFactory } from 'hono/factory';
 import { getCookie } from 'hono/cookie';
 import { verify } from 'hono/jwt';
 import dayjs from 'dayjs';
 
 import { generateUnauthorizedReponse } from '../helpers/response.js';
 import Admin from '../models/admin.js';
-import statusCodes from '../constants/enums/statusCodes.js';
+import statusCodes from '../constants/statusCodes.js';
+
+const factory = createFactory();
 
 // eslint-disable-next-line consistent-return
-export default async (c, next) => {
+export default factory.createMiddleware(async (c, next) => {
     const accessToken = getCookie(c, process.env.ACCESS_TOKEN_KEY);
     if (!accessToken) {
         c.status(statusCodes.UNAUTHORIZED);
@@ -35,4 +38,4 @@ export default async (c, next) => {
     c.set('admin', admin);
 
     await next();
-};
+});
