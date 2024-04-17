@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 
+import Notification from '../../models/notification.js';
 import checkWorkerApiKey from '../../middlewares/checkWorkerApiKey.js';
 import statusCodes from '../../constants/statusCodes.js';
 import { generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
