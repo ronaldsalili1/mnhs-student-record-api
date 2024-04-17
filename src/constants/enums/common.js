@@ -29,4 +29,7 @@ export default {
         track: ['academic', 'tvl'],
         strand: ['com_sys_serv'],
     },
+    grade: {
+        status: ['pending', 'under_review', 'approved'],
+    },
 };

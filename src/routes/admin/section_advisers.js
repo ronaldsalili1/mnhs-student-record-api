@@ -1,7 +1,10 @@
 import { Hono } from 'hono';
 
-import checkAdminToken from '../../middlewares/checkAdminToken.js';
+// Models
+import Section from '../../models/section.js';
 import SectionAdviser from '../../models/section_adviser.js';
+
+import checkAdminToken from '../../middlewares/checkAdminToken.js';
 import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
 import statusCodes from '../../constants/statusCodes.js';
 
@@ -20,7 +23,7 @@ app.get(
         } = c.req.query();
         const skip = limit * (page - 1);
         const query = {
-            ...(section_id && { section_id }),
+            section_id,
         };
 
         const total = await SectionAdviser.countDocuments(query);
@@ -81,6 +84,13 @@ app.post(
             current_timestamp,
         } = sectionAdviserBody;
 
+        // Find section
+        const section = await Section.findById(section_id).lean();
+        if (!section) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Section'));
+        }
+
         // Check if record already exist
         const sectionAdviserExist = await SectionAdviser.exists({
             section_id,
@@ -100,6 +110,8 @@ app.post(
         newSectionAdviser.teacher_id = teacher_id;
         newSectionAdviser.start_at = start_at;
         newSectionAdviser.end_at = end_at;
+        newSectionAdviser.section_name_snapshot = section.name;
+        newSectionAdviser.grade_level_snapshot = section.grade_level;
         newSectionAdviser.created_by = admin._id;
 
         await newSectionAdviser.save();

@@ -4,20 +4,20 @@ import { verify } from 'hono/jwt';
 import dayjs from 'dayjs';
 
 import { generateUnauthorizedReponse } from '../helpers/response.js';
-import Admin from '../models/admin.js';
+import Teacher from '../models/teacher.js';
 import statusCodes from '../constants/statusCodes.js';
 
 const factory = createFactory();
 
 // eslint-disable-next-line consistent-return
 export default factory.createMiddleware(async (c, next) => {
-    const accessToken = getCookie(c, process.env.ADMIN_ACCESS_TOKEN_KEY);
+    const accessToken = getCookie(c, process.env.TEACHER_ACCESS_TOKEN_KEY);
     if (!accessToken) {
         c.status(statusCodes.UNAUTHORIZED);
         return c.json(generateUnauthorizedReponse(4011, 'Missing Access Token'));
     }
 
-    const decodedPayload = await verify(accessToken, process.env.ADMIN_ACCESS_TOKEN_SECRET);
+    const decodedPayload = await verify(accessToken, process.env.TEACHER_ACCESS_TOKEN_SECRET);
     if (!decodedPayload.id) {
         c.status(statusCodes.UNAUTHORIZED);
         return c.json(generateUnauthorizedReponse(4012, 'Expired Token'));
@@ -29,13 +29,13 @@ export default factory.createMiddleware(async (c, next) => {
         return c.json(generateUnauthorizedReponse(4012, 'Expired Token'));
     }
 
-    const admin = await Admin.findOne({ _id: decodedPayload.id, status: 'enabled' }).lean();
-    if (!admin) {
+    const teacher = await Teacher.findOne({ _id: decodedPayload.id, status: 'enabled' }).lean();
+    if (!teacher) {
         c.status(statusCodes.UNAUTHORIZED);
-        return c.json(generateUnauthorizedReponse(4013, 'Admin not found'));
+        return c.json(generateUnauthorizedReponse(4013, 'Teacher not found'));
     }
 
-    c.set('admin', admin);
+    c.set('teacher', teacher);
 
     await next();
 });

@@ -3,8 +3,8 @@ import { Hono } from 'hono';
 // Models
 import Semester from '../../models/semester.js';
 import Subject from '../../models/subject.js';
-import Student from '../../models/student.js';
 import SubjectStudent from '../../models/subject_student.js';
+import Student from '../../models/student.js';
 
 import checkAdminToken from '../../middlewares/checkAdminToken.js';
 import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
@@ -75,6 +75,30 @@ app.get(
         return c.json(generateResponse(statusCodes.OK, 'Success', { subject_student: subjectStudent }));
     },
 );
+app.get(
+    '/options/students',
+    async (c) => {
+        const {
+            subject_id,
+            semester_id,
+        } = c.req.query();
+
+        // Get subject students
+        const subjectStudents = await SubjectStudent.find({ subject_id, semester_id }).lean();
+
+        // Get student options
+        const students = await Student
+            .find({
+                _id: {
+                    $nin: subjectStudents.map((subjectStudent) => subjectStudent.student_id),
+                },
+            })
+            .sort({ last_name: 1 })
+            .lean();
+
+        return c.json(generateResponse(statusCodes.OK, 'Success', { students }));
+    },
+);
 
 // POST ENDPOINTS
 app.post(
@@ -85,17 +109,17 @@ app.post(
         const {
             subject_id,
             semester_id,
-            student_id,
+            student_ids,
         } = subjectStudentBody;
 
         const subjectStudentExist = await SubjectStudent.exists({
             subject_id,
             semester_id,
-            student_id,
+            student_id: { $in: student_ids || [] },
         });
         if (subjectStudentExist) {
             c.status(statusCodes.CONFLICT);
-            return c.json(generateRecordExistsReponse('Subject student'));
+            return c.json(generateRecordExistsReponse('Student'));
         }
 
         // Subject information
@@ -112,95 +136,22 @@ app.post(
             return c.json(generateRecordNotExistsReponse('Semester'));
         }
 
-        // Student information
-        const student = await Student.findById(student_id).lean();
-        if (!student) {
-            c.status(statusCodes.NOT_FOUND);
-            return c.json(generateRecordNotExistsReponse('Student'));
-        }
+        const subjectStudents = student_ids.map((studentId) => ({
+            subject_id,
+            semester_id,
+            student_id: studentId,
+            subject_name_snapshot: subject.name,
+            subject_type_snapshot: subject.type,
+            sy_start_snapshot: semester.sy_start_year,
+            sy_end_snapshot: semester.sy_end_year,
+            semester_term_snapshot: semester.term,
+            created_by: admin._id,
+        }));
 
-        const newSubjectStudent = new SubjectStudent();
-        newSubjectStudent.subject_id = subject_id;
-        newSubjectStudent.semester_id = semester_id;
-        newSubjectStudent.student_id = student_id;
-        newSubjectStudent.subject_name_snapshot = subject.name;
-        newSubjectStudent.subject_type_snapshot = subject.type;
-        newSubjectStudent.sy_start_snapshot = semester.sy_start_year;
-        newSubjectStudent.sy_end_snapshot = semester.sy_end_year;
-        newSubjectStudent.semester_term_snapshot = semester.term;
-        newSubjectStudent.created_by = admin._id;
-
-        await newSubjectStudent.save();
+        await SubjectStudent.insertMany(subjectStudents);
 
         c.status(statusCodes.CREATED);
-        return c.json(generateResponse(statusCodes.OK, 'Success', { subject_student: newSubjectStudent }));
-    },
-);
-
-// PATCH ENDPOINTS
-app.patch(
-    '/:subjectStudentId',
-    async (c) => {
-        const admin = c.get('admin');
-        const id = c.req.param('subjectStudentId');
-        const { subject_student: subjectStudentBody } = await c.req.json();
-        const {
-            subject_id,
-            semester_id,
-            student_id,
-        } = subjectStudentBody;
-
-        const subjectStudent = await SubjectStudent.findById(id);
-        if (!subjectStudent) {
-            c.status(statusCodes.NOT_FOUND);
-            return c.json(generateRecordNotExistsReponse('Subject student'));
-        }
-
-        const subjectStudentExist = await SubjectStudent.exists({
-            _id: { $ne: id },
-            subject_id,
-            semester_id,
-            student_id,
-        });
-        if (subjectStudentExist) {
-            c.status(statusCodes.CONFLICT);
-            return c.json(generateRecordExistsReponse('Subject student'));
-        }
-
-        // Subject information
-        const subject = await Subject.findById(subject_id).lean();
-        if (!subject) {
-            c.status(statusCodes.NOT_FOUND);
-            return c.json(generateRecordNotExistsReponse('Subject'));
-        }
-
-        // Semester information
-        const semester = await Semester.findById(semester_id).lean();
-        if (!semester) {
-            c.status(statusCodes.NOT_FOUND);
-            return c.json(generateRecordNotExistsReponse('Semester'));
-        }
-
-        // Student information
-        const student = await Student.findById(student_id).lean();
-        if (!student) {
-            c.status(statusCodes.NOT_FOUND);
-            return c.json(generateRecordNotExistsReponse('Student'));
-        }
-
-        subjectStudent.subject_id = subject_id;
-        subjectStudent.semester_id = semester_id;
-        subjectStudent.student_id = student_id;
-        subjectStudent.subject_name_snapshot = subject.name;
-        subjectStudent.subject_type_snapshot = subject.type;
-        subjectStudent.sy_start_snapshot = semester.sy_start_year;
-        subjectStudent.sy_end_snapshot = semester.sy_end_year;
-        subjectStudent.semester_term_snapshot = semester.term;
-        subjectStudent.updated_by = admin._id;
-
-        await subjectStudent.save();
-
-        return c.json(generateResponse(statusCodes.OK, 'Success', { subject_student: subjectStudent }));
+        return c.json(generateResponse(statusCodes.OK, 'Success'));
     },
 );
 
@@ -210,7 +161,7 @@ app.delete(
     async (c) => {
         const id = c.req.param('subjectStudentId');
 
-        const subjectStudent = await SubjectStudent.findOneAndDelete(id);
+        const subjectStudent = await SubjectStudent.findByIdAndDelete(id);
         if (!subjectStudent) {
             c.status(statusCodes.NOT_FOUND);
             return c.json(generateRecordNotExistsReponse('Subject student'));

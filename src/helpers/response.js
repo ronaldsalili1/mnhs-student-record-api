@@ -12,8 +12,8 @@ export const generateRecordNotExistsReponse = (object) => generateResponse(404, 
 
 export const generateUnauthorizedReponse = (code, message) => generateResponse(code || 401, message || 'Email or password is incorrect');
 
-export const generateInternalServerError = () => {
-    generateResponse(500, 'Internal Server Error');
+export const generateInternalServerError = (message) => {
+    generateResponse(500, message || 'Internal Server Error');
 };
 
 export const generateValidationErrorResponse = (message) => generateResponse(400, message);

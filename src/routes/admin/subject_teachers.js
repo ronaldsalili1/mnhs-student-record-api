@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
 // Models
+import Subject from '../../models/subject.js';
 import SubjectTeacher from '../../models/subject_teacher.js';
 
 import checkAdminToken from '../../middlewares/checkAdminToken.js';
@@ -92,6 +93,13 @@ app.post('/', async (c) => {
         current_timestamp,
     } = subjectTeacherBody;
 
+    // Find subject
+    const subject = await Subject.findById(subject_id).lean();
+    if (!subject) {
+        c.status(statusCodes.NOT_FOUND);
+        return c.json(generateRecordNotExistsReponse('Subject'));
+    }
+
     // Check if record already exist
     const subjectTeacherExist = await SubjectTeacher.exists({
         subject_id,
@@ -110,6 +118,8 @@ app.post('/', async (c) => {
     newSubjectTeacher.subject_id = subject_id;
     newSubjectTeacher.teacher_id = teacher_id;
     newSubjectTeacher.start_at = start_at;
+    newSubjectTeacher.subject_name_snapshot = subject.name;
+    newSubjectTeacher.subject_type_snapshot = subject.type;
     newSubjectTeacher.end_at = end_at;
     newSubjectTeacher.created_by = admin._id;
 

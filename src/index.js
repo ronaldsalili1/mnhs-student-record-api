@@ -11,6 +11,7 @@ import { generateResponse } from './helpers/response.js';
 import importAll from './helpers/importAll.js';
 
 const adminRoutes = await importAll('/routes/admin');
+const teacherRoutes = await importAll('/routes/teacher');
 const workerRoutes = await importAll('/routes/worker');
 
 const app = new Hono();
@@ -29,6 +30,7 @@ app.use('*', cors({
 // Use all routes
 const routes = {
     admin: adminRoutes,
+    teacher: teacherRoutes,
     worker: workerRoutes,
 };
 for (const routeKey in routes) {

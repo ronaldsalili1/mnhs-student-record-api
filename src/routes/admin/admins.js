@@ -1,15 +1,21 @@
 import { Hono } from 'hono';
 import bcrypt from 'bcrypt';
+import { zValidator } from '@hono/zod-validator';
 
 import checkAdminToken from '../../middlewares/checkAdminToken.js';
 import checkSuperAdminRole from '../../middlewares/checkSuperAdminRole.js';
-import { adminJsonValidator, adminParamValidator, adminQueryValidator } from '../../validators/admin/admins.js';
+import {
+    adminJsonSchema,
+    adminParamSchema,
+    adminQuerySchema,
+} from '../../schema/admin/admins.js';
 import Admin from '../../models/admin.js';
 import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
 import statusCodes from '../../constants/statusCodes.js';
 import { generateRandomString } from '../../helpers/general.js';
 import { publish } from '../../helpers/rabbitmq.js';
 import config from '../../config/index.js';
+import validate from '../../helpers/validator.js';
 
 const app = new Hono().basePath('/admins');
 
@@ -18,7 +24,7 @@ app.use('*', checkAdminToken);
 // GET ENDPOINTS
 app.get(
     '/',
-    adminQueryValidator(),
+    zValidator('query', adminQuerySchema, validate),
     async (c) => {
         const { page, limit } = c.req.valid('query');
         const skip = limit * (page - 1);
@@ -47,7 +53,7 @@ app.get(
 
 app.get(
     '/:adminId',
-    adminParamValidator(),
+    zValidator('param', adminParamSchema, validate),
     async (c) => {
         const { adminId: id } = c.req.valid('param');
 
@@ -66,11 +72,11 @@ app.get(
 // POST ENDPOINTS
 app.post(
     '/',
-    adminJsonValidator(),
+    zValidator('json', adminJsonSchema, validate),
     checkSuperAdminRole,
     async (c) => {
         const admin = c.get('admin');
-        const { admin: adminBody } = await c.req.valid('json');
+        const { admin: adminBody } = c.req.valid('json');
         const {
             email,
             first_name,
@@ -134,8 +140,8 @@ app.post(
 // PATCH ENDPOINTS
 app.patch(
     '/:adminId',
-    adminParamValidator(),
-    adminJsonValidator(),
+    zValidator('param', adminParamSchema, validate),
+    zValidator('json', adminJsonSchema, validate),
     checkSuperAdminRole,
     async (c) => {
         const admin = c.get('admin');

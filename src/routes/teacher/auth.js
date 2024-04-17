@@ -3,14 +3,14 @@ import bcrypt from 'bcrypt';
 import dayjs from 'dayjs';
 import { sign } from 'hono/jwt';
 import { deleteCookie, setCookie } from 'hono/cookie';
-
 import { zValidator } from '@hono/zod-validator';
+
 import statusCodes from '../../constants/statusCodes.js';
-import checkAdminToken from '../../middlewares/checkAdminToken.js';
-import Admin from '../../models/admin.js';
+import checkTeacherToken from '../../middlewares/checkTeacherToken.js';
+import { authJsonSchema } from '../../schema/teacher/auth.js';
+import Teacher from '../../models/teacher.js';
 import { generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
 import config from '../../config/index.js';
-import { authJsonSchema } from '../../schema/admin/auth.js';
 import validate from '../../helpers/validator.js';
 
 const app = new Hono().basePath('/auth');
@@ -18,12 +18,12 @@ const app = new Hono().basePath('/auth');
 // GET ENDPOINTS
 app.get(
     '/authenticated',
-    checkAdminToken,
+    checkTeacherToken,
     async (c) => {
-        const admin = c.get('admin');
-        delete admin.password;
+        const teacher = c.get('teacher');
+        delete teacher.password;
 
-        return c.json(generateResponse(statusCodes.OK, 'Success', { admin }));
+        return c.json(generateResponse(statusCodes.OK, 'Success', { teacher }));
     },
 );
 
@@ -35,17 +35,17 @@ app.post(
         const { email, password } = c.req.valid('json');
         const trimmedEmail = email.trim();
 
-        const admin = await Admin.findOne({
+        const teacher = await Teacher.findOne({
             email: trimmedEmail,
             status: 'enabled',
         }).lean();
 
-        if (!admin) {
+        if (!teacher) {
             c.status(statusCodes.UNAUTHORIZED);
             return c.json(generateUnauthorizedReponse());
         }
 
-        const passwordMatched = await bcrypt.compare(password, admin.password);
+        const passwordMatched = await bcrypt.compare(password, teacher.password);
         if (!passwordMatched) {
             c.status(statusCodes.UNAUTHORIZED);
             return c.json(generateUnauthorizedReponse());
@@ -55,13 +55,13 @@ app.post(
         const TOKEN_TTL = process.env.ACCESS_TOKEN_TTL;
         const expiresAt = dayjs().add(TOKEN_TTL, 'second');
         const payload = {
-            id: admin._id,
+            id: teacher._id,
             created_at: dayjs().unix(),
             expires_at: expiresAt.unix(),
         };
 
-        const key = process.env.ADMIN_ACCESS_TOKEN_KEY;
-        const secret = process.env.ADMIN_ACCESS_TOKEN_SECRET;
+        const key = process.env.TEACHER_ACCESS_TOKEN_KEY;
+        const secret = process.env.TEACHER_ACCESS_TOKEN_SECRET;
         const accessToken = await sign(payload, secret);
 
         setCookie(c, key, accessToken, {
@@ -77,16 +77,16 @@ app.post(
 
         });
 
-        delete admin.password;
+        delete teacher.password;
 
-        return c.json(generateResponse(statusCodes.OK, 'Success', { admin }));
+        return c.json(generateResponse(statusCodes.OK, 'Success', { teacher }));
     },
 );
 
 app.post(
     '/logout',
     async (c) => {
-        deleteCookie(c, process.env.ADMIN_ACCESS_TOKEN_KEY);
+        deleteCookie(c, process.env.TEACHER_ACCESS_TOKEN_KEY);
         return c.json(generateResponse(statusCodes.OK, 'Success'));
     },
 );

@@ -7,7 +7,7 @@ import Student from '../../models/student.js';
 import Section from '../../models/section.js';
 
 import checkAdminToken from '../../middlewares/checkAdminToken.js';
-import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
+import { generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
 import statusCodes from '../../constants/statusCodes.js';
 
 const app = new Hono().basePath('/section-students');
@@ -98,14 +98,23 @@ app.post(
         } = sectionStudentsBody;
 
         // Check for duplicates
-        const sectionStudentExist = await SectionStudent.exists({
+        const sectionStudentExist1 = await SectionStudent.exists({
             section_id,
             semester_id,
             student_id: { $in: student_ids || [] },
         }).lean();
-        if (sectionStudentExist) {
+        if (sectionStudentExist1) {
             c.status(statusCodes.CONFLICT);
-            return c.json(generateRecordExistsReponse('Student'));
+            return c.json(generateResponse(409, 'Student already exist in this section'));
+        }
+
+        const sectionStudentExist2 = await SectionStudent.exists({
+            semester_id,
+            student_id: { $in: student_ids || [] },
+        }).lean();
+        if (sectionStudentExist2) {
+            c.status(statusCodes.CONFLICT);
+            return c.json(generateResponse(409, 'Student already exist in other section'));
         }
 
         // Get section
@@ -136,6 +145,7 @@ app.post(
 
         await SectionStudent.insertMany(sectionStudents);
 
+        c.status(statusCodes.CREATED);
         return c.json(generateResponse(statusCodes.OK, 'Success'));
     },
 );
@@ -146,7 +156,7 @@ app.delete(
     async (c) => {
         const id = c.req.param('sectionStudentId');
 
-        const sectionStudent = await SectionStudent.findOneAndDelete(id);
+        const sectionStudent = await SectionStudent.findByIdAndDelete(id);
         if (!sectionStudent) {
             c.status(statusCodes.NOT_FOUND);
             return c.json(generateRecordNotExistsReponse('Student'));
