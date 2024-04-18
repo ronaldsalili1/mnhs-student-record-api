@@ -89,6 +89,7 @@ app.post(
             shs_admission_date,
             strand,
             track,
+            shs_graduation_date,
         } = studentBody;
 
         // Check if email already used by other student
@@ -120,6 +121,7 @@ app.post(
         newStudent.shs_admission_date = shs_admission_date;
         newStudent.strand = strand;
         newStudent.track = track;
+        newStudent.shs_graduation_date = shs_graduation_date;
         newStudent.created_by = admin._id;
 
         await newStudent.save();
@@ -149,6 +151,7 @@ app.patch(
             shs_admission_date,
             strand,
             track,
+            shs_graduation_date,
         } = studentBody;
 
         // Check if email already used by other student
@@ -186,6 +189,7 @@ app.patch(
         student.shs_admission_date = shs_admission_date;
         student.strand = strand;
         student.track = track;
+        student.shs_graduation_date = shs_graduation_date;
         student.updated_by = admin._id;
 
         await student.save();

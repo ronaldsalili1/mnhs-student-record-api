@@ -91,11 +91,11 @@ export const createSubjectStudentSchema = z.object({
                     })
                     .length(
                         24,
-                        { message: 'Subject ID must be exactly 24 characters long' },
+                        { message: 'Student ID must be exactly 24 characters long' },
                     ),
                 {
-                    required_error: 'Subject IDs is required',
-                    invalid_type_error: 'Subject IDs must be an array',
+                    required_error: 'Student IDs is required',
+                    invalid_type_error: 'Student IDs must be an array',
                 },
             )
             .nonempty({ message: 'Student IDs must not be empty' }),

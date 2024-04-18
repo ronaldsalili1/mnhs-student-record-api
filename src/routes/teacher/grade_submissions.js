@@ -1,11 +1,9 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import ExcelJS from 'exceljs';
 
 // Models
 import Student from '../../models/student.js';
 import Subject from '../../models/subject.js';
-import Semester from '../../models/semester.js';
 import SubjectStudent from '../../models/subject_student.js';
 import GradeSubmission from '../../models/grade_submission.js';
 import Grade from '../../models/grade.js';
@@ -13,8 +11,6 @@ import Admin from '../../models/admin.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import {
-    generateInternalServerError,
-    generateRecordExistsReponse,
     generateRecordNotExistsReponse,
     generateResponse,
 } from '../../helpers/response.js';
@@ -22,7 +18,6 @@ import checkTeacherToken from '../../middlewares/checkTeacherToken.js';
 import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
 
 import validate from '../../helpers/validator.js';
-import { capitalizeFirstLetter, formatFullName, generateRandomString } from '../../helpers/general.js';
 import { getGradeSubmissionByIdSchema, getGradeSubmissionListSchema, gradeSubmissionSchema } from '../../schema/teacher/grade_submissions.js';
 
 const app = new Hono().basePath('/grades/submissions');

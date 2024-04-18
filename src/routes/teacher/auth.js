@@ -5,10 +5,14 @@ import { sign } from 'hono/jwt';
 import { deleteCookie, setCookie } from 'hono/cookie';
 import { zValidator } from '@hono/zod-validator';
 
+// Models
+import Teacher from '../../models/teacher.js';
+import Sections from '../../models/section.js';
+import SectionAdviser from '../../models/section_adviser.js';
+
 import statusCodes from '../../constants/statusCodes.js';
 import checkTeacherToken from '../../middlewares/checkTeacherToken.js';
 import { authJsonSchema } from '../../schema/teacher/auth.js';
-import Teacher from '../../models/teacher.js';
 import { generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
 import config from '../../config/index.js';
 import validate from '../../helpers/validator.js';
@@ -23,7 +27,34 @@ app.get(
         const teacher = c.get('teacher');
         delete teacher.password;
 
-        return c.json(generateResponse(statusCodes.OK, 'Success', { teacher }));
+        const now = dayjs();
+        const sectionAdviserQuery = {
+            $and: [
+                { teacher_id: teacher._id },
+                { start_at: { $lte: now } },
+                {
+                    $or: [
+                        { end_at: null },
+                        { end_at: { $exists: false } },
+                        { end_at: { $gt: now } },
+                    ],
+                },
+            ],
+        };
+
+        // Get the current section of the teacher
+        const sectionAdvisers = await SectionAdviser.find(sectionAdviserQuery).lean();
+        // eslint-disable-next-line max-len
+        const sections = await Sections.find({ _id: { $in: sectionAdvisers.map((sectionAdviser) => sectionAdviser.section_id) } })
+            .sort({ name: 1 })
+            .lean();
+
+        return c.json(generateResponse(statusCodes.OK, 'Success', {
+            teacher: {
+                ...teacher,
+                sections,
+            },
+        }));
     },
 );
 
