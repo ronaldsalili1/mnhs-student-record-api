@@ -11,13 +11,4 @@ export const downloadTemplateSchema = z.object({
             24,
             { message: 'Subject ID must be exactly 24 characters long' },
         ),
-    semester_id: z
-        .string({
-            required_error: 'Semester ID is required',
-            invalid_type_error: 'Semester ID must be a string',
-        })
-        .length(
-            24,
-            { message: 'Semester ID must be exactly 24 characters long' },
-        ),
 });

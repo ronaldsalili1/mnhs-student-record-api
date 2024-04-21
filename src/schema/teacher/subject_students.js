@@ -29,7 +29,7 @@ export const getSubjectStudentListSchema = z.object({
         .optional(),
 });
 
-export const getSubjectStudentOptionsSchema = z.object({
+export const getSubjectStudentsEnrolledSchema = z.object({
     subject_id: z
         .string({
             required_error: 'Subject ID is required',
@@ -38,15 +38,6 @@ export const getSubjectStudentOptionsSchema = z.object({
         .length(
             24,
             { message: 'Subject ID must be exactly 24 characters long' },
-        ),
-    semester_id: z
-        .string({
-            required_error: 'Semester ID is required',
-            invalid_type_error: 'Semester ID must be a string',
-        })
-        .length(
-            24,
-            { message: 'Semester ID must be exactly 24 characters long' },
         ),
 });
 
@@ -73,15 +64,6 @@ export const createSubjectStudentSchema = z.object({
             .length(
                 24,
                 { message: 'Subject ID must be exactly 24 characters long' },
-            ),
-        semester_id: z
-            .string({
-                required_error: 'Semester ID is required',
-                invalid_type_error: 'Semester ID must be a string',
-            })
-            .length(
-                24,
-                { message: 'Semester ID must be exactly 24 characters long' },
             ),
         student_ids: z
             .array(

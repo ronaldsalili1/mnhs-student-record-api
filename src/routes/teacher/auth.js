@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { sign } from 'hono/jwt';
 import { deleteCookie, setCookie } from 'hono/cookie';
 import { zValidator } from '@hono/zod-validator';
+import Redis from 'ioredis';
 
 // Models
 import Teacher from '../../models/teacher.js';
@@ -12,10 +13,13 @@ import SectionAdviser from '../../models/section_adviser.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import checkTeacherToken from '../../middlewares/checkTeacherToken.js';
-import { authJsonSchema } from '../../schema/teacher/auth.js';
-import { generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
+import { generateInternalServerError, generateRecordNotExistsReponse, generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
 import config from '../../config/index.js';
 import validate from '../../helpers/validator.js';
+import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
+import { loginSchema, passwordResetRequestSchema, resetPasswordSchema } from '../../schema/teacher/auth.js';
+import { generateRandomString } from '../../helpers/general.js';
+import { publish } from '../../helpers/rabbitmq.js';
 
 const app = new Hono().basePath('/auth');
 
@@ -23,9 +27,11 @@ const app = new Hono().basePath('/auth');
 app.get(
     '/authenticated',
     checkTeacherToken,
+    checkActiveSemester,
     async (c) => {
         const teacher = c.get('teacher');
-        delete teacher.password;
+        const teacherObj = teacher.toObject();
+        delete teacherObj.password;
 
         const now = dayjs();
         const sectionAdviserQuery = {
@@ -49,11 +55,13 @@ app.get(
             .sort({ name: 1 })
             .lean();
 
+        const semester = c.get('semester');
         return c.json(generateResponse(statusCodes.OK, 'Success', {
             teacher: {
-                ...teacher,
+                ...teacherObj,
                 sections,
             },
+            semester,
         }));
     },
 );
@@ -61,7 +69,7 @@ app.get(
 // POST ENDPOINTS
 app.post(
     '/login',
-    zValidator('json', authJsonSchema, validate),
+    zValidator('json', loginSchema, validate),
     async (c) => {
         const { email, password } = c.req.valid('json');
         const trimmedEmail = email.trim();
@@ -69,7 +77,7 @@ app.post(
         const teacher = await Teacher.findOne({
             email: trimmedEmail,
             status: 'enabled',
-        }).lean();
+        });
 
         if (!teacher) {
             c.status(statusCodes.UNAUTHORIZED);
@@ -108,9 +116,13 @@ app.post(
 
         });
 
-        delete teacher.password;
+        teacher.last_login_at = new Date();
+        await teacher.save();
 
-        return c.json(generateResponse(statusCodes.OK, 'Success', { teacher }));
+        const teacherObj = teacher.toObject();
+        delete teacherObj.password;
+
+        return c.json(generateResponse(statusCodes.OK, 'Success', { teacher: teacherObj }));
     },
 );
 
@@ -118,6 +130,97 @@ app.post(
     '/logout',
     async (c) => {
         deleteCookie(c, process.env.TEACHER_ACCESS_TOKEN_KEY);
+        return c.json(generateResponse(statusCodes.OK, 'Success'));
+    },
+);
+
+app.post(
+    '/reset-password/request',
+    zValidator('json', passwordResetRequestSchema, validate),
+    async (c) => {
+        const { email, resend, old_token } = c.req.valid('json');
+        const redis = new Redis(config.api.redis);
+
+        if (resend) {
+            const key = `reset_password_token:teacher:${old_token}`;
+            await redis.del(key);
+        }
+
+        const token = generateRandomString();
+        // Find teacher
+        const teacher = await Teacher.findOne({ email, status: 'enabled' }).lean();
+        if (!teacher) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse(`Teacher with email ${email}`));
+        }
+        delete teacher.password;
+
+        try {
+            const key = `reset_password_token:teacher:${token}`;
+            await redis.set(key, JSON.stringify(teacher));
+            await redis.expire(key, 900);
+        } catch (error) {
+            console.error(error.message);
+            c.status(statusCodes.INTERNAL_SERVER_ERROR);
+            return c.json(generateInternalServerError(error.message));
+        }
+
+        try {
+            await publish('spawn_notification', {
+                type: 'password_reset_request',
+                to: email,
+                first_name: teacher.first_name,
+                last_name: teacher.last_name,
+                link: `${config.teacher.host}${config.teacher.prefix}/password-reset/${token}`,
+            });
+        } catch (error) {
+            return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send password reset request notification'));
+        }
+
+        return c.json(generateResponse(200, 'Success'));
+    },
+);
+
+app.post(
+    '/reset-password',
+    zValidator('json', resetPasswordSchema, validate),
+    async (c) => {
+        const {
+            token,
+            new_password,
+            confirm_new_password,
+        } = c.req.valid('json');
+        const redis = new Redis(config.api.redis);
+
+        // Check if the token is valid
+        const key = `reset_password_token:teacher:${token}`;
+        const teacherString = await redis.get(key);
+        if (!teacherString) {
+            c.status(statusCodes.FORBIDDEN);
+            return c.json(generateResponse(statusCodes.FORBIDDEN, 'The validity of your password reset request has expired. Kindly submit a new request. Thank you!'));
+        }
+
+        const teacherObj = JSON.parse(teacherString);
+        const teacher = await Teacher.findById(teacherObj._id);
+        if (!teacher) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Teacher'));
+        }
+
+        // Check if new_password and confirm_new_password matched
+        if (new_password !== confirm_new_password) {
+            c.status(statusCodes.UNAUTHORIZED);
+            return c.json(generateResponse(statusCodes.FORBIDDEN, 'New password did not match'));
+        }
+
+        const saltRounds = 10;
+        const password = await bcrypt.hash(new_password, saltRounds);
+
+        teacher.password = password;
+        await teacher.save();
+
+        await redis.del(key);
+
         return c.json(generateResponse(statusCodes.OK, 'Success'));
     },
 );

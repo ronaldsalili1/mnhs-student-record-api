@@ -33,6 +33,7 @@ app.get(
         const {
             page,
             limit,
+            semester_id,
             section_id,
             keyword,
         } = c.req.valid('query');
@@ -61,7 +62,7 @@ app.get(
         // Get all the students
         const semester = c.get('semester');
         const sectionStudentQuery = {
-            semester_id: semester._id,
+            semester_id: semester_id || semester._id,
             section_id: sectionAdvisers.map((sectionAdviser) => sectionAdviser.section_id),
         };
         const sectionStudents = await SectionStudent.find(sectionStudentQuery)
@@ -126,12 +127,19 @@ app.get(
         const skip = limit * (page - 1);
 
         const semester = c.get('semester');
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(
+                statusCodes.NOT_FOUND,
+                'There is no active semester at the moment',
+            ));
+        }
         const sectionStudentQuery = { semester_id: semester._id };
         const sectionStudents = await SectionStudent.find(sectionStudentQuery)
             .populate('section_id')
             .lean();
 
-        const studentQuery = {
+        let studentQuery = {
             ...(keyword && {
                 $or: [
                     { first_name: { $regex: keyword, $options: 'i' } },
@@ -168,22 +176,26 @@ app.get(
                 },
             ];
         } else {
-            studentQuery._id = {
+            studentQuery = {
+                ...studentQuery,
                 ...(section_id && {
-                    $in: sectionStudents.map((sectionStudent) => {
-                        if (sectionStudent.section_id._id.toString() === section_id) {
-                            return sectionStudent.student_id;
-                        }
+                    _id: {
+                        $in: sectionStudents.map((sectionStudent) => {
+                            if (sectionStudent.section_id._id.toString() === section_id) {
+                                return sectionStudent.student_id;
+                            }
 
-                        return null;
-                    }).filter((d) => d !== null),
+                            return null;
+                        }).filter((d) => d !== null),
+                    },
                 }),
                 ...(exclude && {
-                    $nin: JSON.parse(exclude),
+                    _id: {
+                        $nin: JSON.parse(exclude),
+                    },
                 }),
             };
         }
-        console.log('🚀 ~ studentQuery:', studentQuery);
 
         const total = await Student.countDocuments(studentQuery);
         const students = await Student.find(studentQuery)

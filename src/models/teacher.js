@@ -12,6 +12,7 @@ const schema = new Schema(
         last_name: { type: String, required: true },
         middle_name: { type: String },
         suffix: { type: String },
+        last_login_at: { type: Date },
         created_by: { type: Schema.Types.ObjectId },
         updated_by: { type: Schema.Types.ObjectId },
     },

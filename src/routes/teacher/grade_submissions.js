@@ -87,20 +87,20 @@ app.get(
         }
 
         const grades = await Grade.find({ grade_submission_id: gradeSubmissionId })
-            .populate('subject_student_id')
+            .populate('student_id')
             .lean();
 
         const students = await Student.find({
-            _id: { $in: grades.map((grade) => grade.subject_student_id.student_id) },
+            _id: { $in: grades.map((grade) => grade.student_id._id) },
         }).lean();
 
         grades.forEach((grade) => {
             const student = students.find((student) => (
-                student._id.toString() === grade.subject_student_id.student_id.toString()
+                student._id.toString() === grade.student_id._id.toString()
             ));
 
             grade.student = student;
-            delete grade.subject_student_id;
+            delete grade.student_id;
         });
 
         return c.json(generateResponse(statusCodes.OK, 'Success', {
@@ -120,6 +120,14 @@ app.post(
     async (c) => {
         const teacher = c.get('teacher');
         const semester = c.get('semester');
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(
+                statusCodes.NOT_FOUND,
+                'There is no active semester at the moment',
+            ));
+        }
+
         const { grade_submission: gradeSubmissionBody } = c.req.valid('json');
         const {
             admin_id,
@@ -163,22 +171,15 @@ app.post(
             created_by: teacher._id,
         });
 
-        const subjectStudents = await SubjectStudent.find({
-            subject_id,
-            semester_id: semester._id,
-            student_id: { $in: grades.map((grade) => grade.student_id) },
-        }).lean();
-
         // Create grades
         await Grade.insertMany(grades.map((grade) => {
-            const { quarter_1, quarter_2 } = grade || {};
-            const subjectStudent = subjectStudents.find((subjectStudent) => (
-                subjectStudent.student_id.toString() === grade.student_id
-            ));
+            const { quarter_1, quarter_2, student_id } = grade || {};
 
             return {
                 grade_submission_id: gradeSubmission._id,
-                subject_student_id: subjectStudent._id,
+                subject_id,
+                semester_id: semester._id,
+                student_id,
                 quarter_1,
                 quarter_2,
                 created_by: teacher._id,
@@ -199,6 +200,14 @@ app.patch(
     async (c) => {
         const teacher = c.get('teacher');
         const semester = c.get('semester');
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(
+                statusCodes.NOT_FOUND,
+                'There is no active semester at the moment',
+            ));
+        }
+
         const { gradeSubmissionId } = c.req.valid('param');
         const { grade_submission: gradeSubmissionBody } = c.req.valid('json');
         const {
@@ -244,25 +253,18 @@ app.patch(
         gradeSubmission.updated_by = teacher._id;
         await gradeSubmission.save();
 
-        const subjectStudents = await SubjectStudent.find({
-            subject_id,
-            semester_id: semester._id,
-            student_id: { $in: grades.map((grade) => grade.student_id) },
-        }).lean();
-
         // Delete all grades under gradeSubmissionId
         await Grade.deleteMany({ grade_submission_id: gradeSubmissionId });
 
         // Create grades
         await Grade.insertMany(grades.map((grade) => {
-            const { quarter_1, quarter_2 } = grade || {};
-            const subjectStudent = subjectStudents.find((subjectStudent) => (
-                subjectStudent.student_id.toString() === grade.student_id
-            ));
+            const { quarter_1, quarter_2, student_id } = grade || {};
 
             return {
                 grade_submission_id: gradeSubmission._id,
-                subject_student_id: subjectStudent._id,
+                subject_id,
+                semester_id: semester._id,
+                student_id,
                 quarter_1,
                 quarter_2,
                 created_by: teacher._id,

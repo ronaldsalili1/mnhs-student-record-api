@@ -29,7 +29,7 @@ export default factory.createMiddleware(async (c, next) => {
         return c.json(generateUnauthorizedReponse(4012, 'Expired Token'));
     }
 
-    const teacher = await Teacher.findOne({ _id: decodedPayload.id, status: 'enabled' }).lean();
+    const teacher = await Teacher.findOne({ _id: decodedPayload.id, status: 'enabled' });
     if (!teacher) {
         c.status(statusCodes.UNAUTHORIZED);
         return c.json(generateUnauthorizedReponse(4013, 'Teacher not found'));

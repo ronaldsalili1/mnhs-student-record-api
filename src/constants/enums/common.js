@@ -11,6 +11,7 @@ export default {
         channel: ['email', 'sms'],
         type: [
             'account_creation',
+            'password_reset_request',
         ],
         status: [
             'queued',

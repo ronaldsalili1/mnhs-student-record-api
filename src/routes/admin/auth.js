@@ -38,7 +38,7 @@ app.post(
         const admin = await Admin.findOne({
             email: trimmedEmail,
             status: 'enabled',
-        }).lean();
+        });
 
         if (!admin) {
             c.status(statusCodes.UNAUTHORIZED);
@@ -77,9 +77,13 @@ app.post(
 
         });
 
-        delete admin.password;
+        admin.last_login_at = new Date();
+        await admin.save();
 
-        return c.json(generateResponse(statusCodes.OK, 'Success', { admin }));
+        const adminObj = admin.toObject();
+        delete adminObj.password;
+
+        return c.json(generateResponse(statusCodes.OK, 'Success', { admin: adminObj }));
     },
 );
 

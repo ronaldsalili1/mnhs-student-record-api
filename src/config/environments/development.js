@@ -2,6 +2,11 @@ export default {
     api: {
         domain: 'localhost',
         port: 3000,
+        redis: {
+            host: '127.0.0.1',
+            port: '6379',
+            db: 0,
+        },
     },
     admin: {
         host: 'http://localhost:3001',

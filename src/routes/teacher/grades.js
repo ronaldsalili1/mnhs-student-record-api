@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import ExcelJS from 'exceljs';
+import slugify from 'slugify';
 
 // Models
 import Student from '../../models/student.js';
@@ -32,8 +33,18 @@ app.use('*', checkTeacherToken);
 app.get(
     '/download/template',
     zValidator('query', downloadTemplateSchema, validate),
+    checkActiveSemester,
     async (c) => {
-        const { subject_id, semester_id } = c.req.valid('query');
+        const { subject_id } = c.req.valid('query');
+
+        const semester = c.get('semester');
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(
+                statusCodes.NOT_FOUND,
+                'There is no active semester at the moment',
+            ));
+        }
 
         // Get necessary data
         const subject = await Subject.findById(subject_id).lean();
@@ -42,15 +53,9 @@ app.get(
             return c.json(generateRecordNotExistsReponse('Subject'));
         }
 
-        const semester = await Semester.findById(semester_id).lean();
-        if (!semester) {
-            c.status(statusCodes.NOT_FOUND);
-            return c.json(generateRecordNotExistsReponse('Semester'));
-        }
-
         const subjectStudents = await SubjectStudent.find({
             subject_id,
-            semester_id,
+            semester_id: semester._id,
         }).lean();
         const students = await Student.find({
             _id: {
@@ -166,7 +171,7 @@ app.get(
 
         // Set appropriate response headers for Excel download
         c.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        c.header('Content-Disposition', 'attachment; filename=report.xlsx');
+        c.header('Content-Disposition', `attachment; filename=${slugify(subject.name.toLowerCase())}-template.xlsx`);
 
         const buffer = await workbook.xlsx.writeBuffer();
 
@@ -181,6 +186,13 @@ app.post(
     async (c) => {
         const { file } = await c.req.parseBody();
         const semester = c.get('semester');
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(
+                statusCodes.NOT_FOUND,
+                'There is no active semester at the moment',
+            ));
+        }
 
         const studentGradeData = [];
         let subject;

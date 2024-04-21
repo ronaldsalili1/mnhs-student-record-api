@@ -13,6 +13,7 @@ const schema = new Schema(
         middle_name: { type: String },
         suffix: { type: String },
         roles: { type: [String], enum: commonEnums.admin.roles, required: true },
+        last_login_at: { type: Date },
         created_by: { type: Schema.Types.ObjectId },
         updated_by: { type: Schema.Types.ObjectId },
     },

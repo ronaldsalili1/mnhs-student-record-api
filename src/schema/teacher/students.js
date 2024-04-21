@@ -3,6 +3,15 @@ import { z } from 'zod';
 export const getStudentListSchema = z.object({
     page: z.coerce.number().default(1),
     limit: z.coerce.number().default(10),
+    semester_id: z
+        .string({
+            invalid_type_error: 'Semester ID must be a string',
+        })
+        .length(
+            24,
+            { message: 'Semester ID must be exactly 24 characters long' },
+        )
+        .optional(),
     section_id: z
         .string({
             invalid_type_error: 'Section ID must be a string',
@@ -42,9 +51,14 @@ export const getStudentOptionsSchema = z.object({
         })
         .optional(),
     exclude_students_in_section: z
-        .coerce
-        .boolean()
-        .default(false),
+        .string({
+            required_error: 'exclude_students_in_section is required',
+            invalid_type_error: 'exclude_students_in_section must be a string',
+        })
+        .refine((value) => value === 'true' || value === 'false', {
+            message: 'exclude_students_in_section must be a boolean string',
+        })
+        .transform((value) => value === 'true'),
 });
 
 export const createSectionStudents = z.object({
