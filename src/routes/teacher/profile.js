@@ -1,17 +1,12 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import bcrypt from 'bcrypt';
-import Redis from 'ioredis';
 
-import config from '../../config/index.js';
 import statusCodes from '../../constants/statusCodes.js';
-import { generateInternalServerError, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
+import { generateResponse } from '../../helpers/response.js';
 import checkTeacherToken from '../../middlewares/checkTeacherToken.js';
 import validate from '../../helpers/validator.js';
 import { changePasswordSchema, updateProfileSchema } from '../../schema/teacher/profile.js';
-import { generateRandomString } from '../../helpers/general.js';
-import Teacher from '../../models/teacher.js';
-import { publish } from '../../helpers/rabbitmq.js';
 
 const app = new Hono().basePath('/profile');
 

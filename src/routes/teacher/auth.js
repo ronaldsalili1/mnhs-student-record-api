@@ -13,7 +13,11 @@ import SectionAdviser from '../../models/section_adviser.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import checkTeacherToken from '../../middlewares/checkTeacherToken.js';
-import { generateInternalServerError, generateRecordNotExistsReponse, generateResponse, generateUnauthorizedReponse } from '../../helpers/response.js';
+import {
+    generateInternalServerError,
+    generateRecordNotExistsReponse,
+    generateResponse, generateUnauthorizedReponse,
+} from '../../helpers/response.js';
 import config from '../../config/index.js';
 import validate from '../../helpers/validator.js';
 import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
