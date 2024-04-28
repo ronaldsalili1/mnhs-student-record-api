@@ -48,16 +48,16 @@ app.post(
 
         const newStudentShsEligibility = new StudentShsEligibility();
         newStudentShsEligibility.student_id = student_id;
-        newStudentShsEligibility.hs_completer = hs_completer;
+        newStudentShsEligibility.hs_completer = hs_completer === 'yes';
         newStudentShsEligibility.hs_gen_avg = hs_gen_avg;
-        newStudentShsEligibility.jhs_completer = jhs_completer;
+        newStudentShsEligibility.jhs_completer = jhs_completer === 'yes';
         newStudentShsEligibility.jhs_gen_avg = jhs_gen_avg;
         newStudentShsEligibility.completion_date = completion_date;
         newStudentShsEligibility.school_name = school_name;
         newStudentShsEligibility.school_address = school_address;
-        newStudentShsEligibility.pept_passer = pept_passer;
+        newStudentShsEligibility.pept_passer = pept_passer === 'yes';
         newStudentShsEligibility.pept_rating = pept_rating;
-        newStudentShsEligibility.als_ae_passer = als_ae_passer;
+        newStudentShsEligibility.als_ae_passer = als_ae_passer === 'yes';
         newStudentShsEligibility.als_ae_rating = als_ae_rating;
         newStudentShsEligibility.others = others;
         newStudentShsEligibility.assesment_date = assesment_date;
@@ -96,6 +96,7 @@ app.patch(
             assesment_date,
             clc_name_address,
         } = studentShsEligibilityBody;
+        console.log('🚀 ~ studentShsEligibilityBody:', studentShsEligibilityBody);
 
         const studentShsEligibility = await StudentShsEligibility.findOne({ _id: id, student_id });
         if (!studentShsEligibility) {
@@ -104,16 +105,16 @@ app.patch(
         }
 
         studentShsEligibility.student_id = student_id;
-        studentShsEligibility.hs_completer = hs_completer;
+        studentShsEligibility.hs_completer = hs_completer === 'yes';
         studentShsEligibility.hs_gen_avg = hs_gen_avg;
-        studentShsEligibility.jhs_completer = jhs_completer;
+        studentShsEligibility.jhs_completer = jhs_completer === 'yes';
         studentShsEligibility.jhs_gen_avg = jhs_gen_avg;
         studentShsEligibility.completion_date = completion_date;
         studentShsEligibility.school_name = school_name;
         studentShsEligibility.school_address = school_address;
-        studentShsEligibility.pept_passer = pept_passer;
+        studentShsEligibility.pept_passer = pept_passer === 'yes';
         studentShsEligibility.pept_rating = pept_rating;
-        studentShsEligibility.als_ae_passer = als_ae_passer;
+        studentShsEligibility.als_ae_passer = als_ae_passer === 'yes';
         studentShsEligibility.als_ae_rating = als_ae_rating;
         studentShsEligibility.others = others;
         studentShsEligibility.assesment_date = assesment_date;

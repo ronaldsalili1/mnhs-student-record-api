@@ -108,25 +108,20 @@ app.post(
         }
 
         const saltRounds = 10;
-        let password;
-        if (process.env.NODE_ENV === 'development') {
-            password = await bcrypt.hash('password', saltRounds);
-        } else {
-            const plainPassword = generateRandomString(6);
-            password = await bcrypt.hash(plainPassword, saltRounds);
+        const plainPassword = generateRandomString(6);
+        const password = await bcrypt.hash(plainPassword, saltRounds);
 
-            try {
-                await publish('spawn_notification', {
-                    type: 'account_creation',
-                    to: email,
-                    password: plainPassword,
-                    first_name,
-                    last_name,
-                    link: `${config.teacher.host}/login`,
-                });
-            } catch (error) {
-                return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send account creation notification'));
-            }
+        try {
+            await publish('spawn_notification', {
+                type: 'account_creation',
+                to: email,
+                password: plainPassword,
+                first_name,
+                last_name,
+                link: `${config.teacher.host}${config.teacher.prefix}/login`,
+            });
+        } catch (error) {
+            return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send account creation notification'));
         }
 
         const newTeacher = new Teacher();
