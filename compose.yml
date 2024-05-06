@@ -42,7 +42,7 @@ services:
     depends_on:
       - mnhs-student-record-redis
       - mnhs-student-record-rabbitmq
-    build: ../mnhs-student-record-api
+    build: .
     ports: 
       - 3000:3000
     environment:
@@ -60,11 +60,11 @@ services:
       - AMQP_PASSWORD=abcd1234
     develop:
       watch:
-        - path: ../mnhs-student-record-api/package.json
+        - path: package.json
           action: rebuild
-        - path: ../mnhs-student-record-api/package-lock.json
+        - path: package-lock.json
           action: rebuild
-        - path: ../mnhs-student-record-api
+        - path: .
           target: /app
           action: sync
 
