@@ -92,7 +92,9 @@ app.get(
 
         const students = await Student.find({
             _id: { $in: grades.map((grade) => grade.student_id._id) },
-        }).lean();
+        })
+            .sort({ last_name: 1, first_name: 1 })
+            .lean();
 
         grades.forEach((grade) => {
             const student = students.find((student) => (
@@ -101,6 +103,32 @@ app.get(
 
             grade.student = student;
             delete grade.student_id;
+        });
+
+        grades.sort((a, b) => {
+            let studentA = a.student.last_name;
+            let studentB = b.student.last_name;
+
+            if (studentA < studentB) {
+                return -1;
+            }
+
+            if (studentA > studentB) {
+                return 1;
+            }
+
+            studentA = a.student.first_name;
+            studentB = b.student.first_name;
+
+            if (studentA < studentB) {
+                return -1;
+            }
+
+            if (studentA > studentB) {
+                return 1;
+            }
+
+            return 0;
         });
 
         return c.json(generateResponse(statusCodes.OK, 'Success', {

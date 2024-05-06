@@ -11,4 +11,13 @@ export const downloadTemplateSchema = z.object({
             24,
             { message: 'Subject ID must be exactly 24 characters long' },
         ),
+    section_id: z
+        .string({
+            required_error: 'Section ID is required',
+            invalid_type_error: 'Section ID must be a string',
+        })
+        .length(
+            24,
+            { message: 'Section ID must be exactly 24 characters long' },
+        ),
 });

@@ -47,7 +47,7 @@ export const getStudentOptionsSchema = z.object({
         .optional(),
     exclude: z
         .string({
-            invalid_type_error: 'Keyword must be a string',
+            invalid_type_error: 'Exclude must be a string',
         })
         .optional(),
     exclude_students_in_section: z

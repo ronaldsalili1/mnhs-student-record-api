@@ -1,0 +1,109 @@
+services:
+  mnhs-student-record-admin:
+    container_name: mnhs-student-record-admin
+    depends_on:
+      - mnhs-student-record-api
+    build: ../mnhs-student-record-admin
+    ports:
+      - 3001:3001
+    environment:
+      - NODE_ENV=development
+    develop:
+      watch:
+        - path: ../mnhs-student-record-admin/package.json
+          action: rebuild
+        - path: ../mnhs-student-record-admin/package-lock.json
+          action: rebuild
+        - path: ../mnhs-student-record-admin
+          target: /app
+          action: sync
+
+  mnhs-student-record-teacher:
+    container_name: mnhs-student-record-teacher
+    depends_on:
+      - mnhs-student-record-api
+    build: ../mnhs-student-record-teacher
+    ports:
+      - 3002:3002
+    environment:
+      - NODE_ENV=development
+    develop:
+      watch:
+        - path: ../mnhs-student-record-teacher/package.json
+          action: rebuild
+        - path: ../mnhs-student-record-teacher/package-lock.json
+          action: rebuild
+        - path: ../mnhs-student-record-teacher
+          target: /app
+          action: sync
+  
+  mnhs-student-record-api:
+    container_name: mnhs-student-record-api
+    depends_on:
+      - mnhs-student-record-redis
+      - mnhs-student-record-rabbitmq
+    build: ../mnhs-student-record-api
+    ports: 
+      - 3000:3000
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb+srv://development:development@cluster0.gv6linz.mongodb.net/mnhs_student_record?retryWrites=true&w=majority&appName=Cluster0
+      - ACCESS_TOKEN_TTL=86400
+      - ADMIN_ACCESS_TOKEN_SECRET=admin-access-token
+      - ADMIN_ACCESS_TOKEN_KEY=x-mnhs-admin-token
+      - TEACHER_ACCESS_TOKEN_SECRET=teacher-access-token
+      - TEACHER_ACCESS_TOKEN_KEY=x-mnhs-teacher-token
+      - STUDENT_ACCESS_TOKEN_SECRET=student-access-token
+      - STUDENT_ACCESS_TOKEN_KEY=x-mnhs-student-token
+      - WORKER_API_KEY=af6f7a9b-5234-4597-8d03-115c23e84379
+      - AMQP_USERNAME=root
+      - AMQP_PASSWORD=abcd1234
+    develop:
+      watch:
+        - path: ../mnhs-student-record-api/package.json
+          action: rebuild
+        - path: ../mnhs-student-record-api/package-lock.json
+          action: rebuild
+        - path: ../mnhs-student-record-api
+          target: /app
+          action: sync
+
+  mnhs-student-record-worker:
+    container_name: mnhs-student-record-worker
+    depends_on:
+      - mnhs-student-record-rabbitmq
+      - mnhs-student-record-api
+    build: ../mnhs-student-record-worker
+    environment:
+      - NODE_ENV=development
+      - AMQP_USERNAME=root
+      - AMQP_PASSWORD=abcd1234
+      - WORKER_API_KEY=af6f7a9b-5234-4597-8d03-115c23e84379
+      - SMTP_USER=ronaldsalili1@gmail.com
+      - SMTP_PASSWORD=Ugxk0t84O9szRvHM
+    develop:
+      watch:
+        - path: ../mnhs-student-record-worker/package.json
+          action: rebuild
+        - path: ../mnhs-student-record-worker/package-lock.json
+          action: rebuild
+        - path: ../mnhs-student-record-worker
+          target: /app
+          action: sync
+
+  mnhs-student-record-redis:
+    container_name: mnhs-student-record-redis
+    image: redis:7.2.3
+    ports:
+      - "6379:6379"
+
+  mnhs-student-record-rabbitmq:
+    container_name: mnhs-student-record-rabbitmq
+    image: rabbitmq:3.12.10-management
+    ports:
+      - 15672:15672
+      - 5672:5672
+    environment:
+      - RABBITMQ_DEFAULT_USER=root
+      - RABBITMQ_DEFAULT_PASS=abcd1234
+

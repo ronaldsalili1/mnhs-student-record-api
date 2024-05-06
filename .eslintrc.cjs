@@ -29,6 +29,7 @@ module.exports = {
         quotes: [2, 'single', { avoidEscape: true }],
         indent: ['error', 4, { SwitchCase: 1 }],
         'import/extensions': ['error', 'ignorePackages'],
+        'import/no-named-as-default-member': 'off',
         'import/no-unresolved': 'off',
         'no-console': 'off',
         'no-continue': 'off',

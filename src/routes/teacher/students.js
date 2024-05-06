@@ -112,6 +112,70 @@ app.get(
 );
 
 app.get(
+    '/options/advisees',
+    checkActiveSemester,
+    async (c) => {
+        const teacher = c.get('teacher');
+
+        const semester = c.get('semester');
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(
+                statusCodes.NOT_FOUND,
+                'There is no active semester at the moment',
+            ));
+        }
+
+        const now = dayjs();
+        const sectionAdviserQuery = {
+            $and: [
+                { teacher_id: teacher._id },
+                { start_at: { $lte: now } },
+                {
+                    $or: [
+                        { end_at: null },
+                        { end_at: { $exists: false } },
+                        { end_at: { $gt: now } },
+                    ],
+                },
+            ],
+        };
+        // Get the current section of the teacher
+        const sectionAdvisers = await SectionAdviser.find(sectionAdviserQuery).lean();
+
+        const sectionStudentQuery = {
+            semester_id: semester._id,
+            section_id: { $in: sectionAdvisers.map((sectionAdviser) => sectionAdviser.section_id) },
+        };
+        const sectionStudents = await SectionStudent.find(sectionStudentQuery)
+            .populate('section_id')
+            .lean();
+
+        const studentQuery = {
+            _id: {
+                $in: sectionStudents.map((sectionStudent) => sectionStudent.student_id),
+            },
+        };
+        const students = await Student.find(studentQuery)
+            .sort({ last_name: 1, first_name: 1, middle_name: 1 })
+            .lean();
+
+        students.forEach((student) => {
+            // eslint-disable-next-line arrow-body-style
+            const sectionStudent = sectionStudents.find((sectionStudent) => {
+                return sectionStudent.student_id.toString() === student._id.toString();
+            });
+
+            if (sectionStudent) {
+                student.section = sectionStudent.section_id;
+            }
+        });
+
+        return c.json(generateResponse(statusCodes.OK, 'Success', { students }));
+    },
+);
+
+app.get(
     '/options',
     zValidator('query', getStudentOptionsSchema, validate),
     checkActiveSemester,

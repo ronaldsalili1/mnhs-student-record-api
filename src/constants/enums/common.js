@@ -33,4 +33,5 @@ export default {
     grade: {
         status: ['pending', 'under_review', 'approved'],
     },
+    form: ['sf10', 'master_gradesheet'],
 };

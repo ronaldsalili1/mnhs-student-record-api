@@ -37,7 +37,7 @@ app.get(
         const teacherObj = teacher.toObject();
         delete teacherObj.password;
 
-        const now = dayjs();
+        const now = dayjs().toDate();
         const sectionAdviserQuery = {
             $and: [
                 { teacher_id: teacher._id },

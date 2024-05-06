@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import ExcelJS from 'exceljs';
 import slugify from 'slugify';
+import dayjs from 'dayjs';
 
 // Models
 import Student from '../../models/student.js';
@@ -11,6 +12,8 @@ import SubjectStudent from '../../models/subject_student.js';
 import GradeSubmission from '../../models/grade_submission.js';
 import Grade from '../../models/grade.js';
 import Admin from '../../models/admin.js';
+import SectionAdviser from '../../models/section_adviser.js';
+import SectionStudent from '../../models/section_student.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import {
@@ -35,7 +38,7 @@ app.get(
     zValidator('query', downloadTemplateSchema, validate),
     checkActiveSemester,
     async (c) => {
-        const { subject_id } = c.req.valid('query');
+        const { subject_id, section_id } = c.req.valid('query');
 
         const semester = c.get('semester');
         if (!semester) {
@@ -53,16 +56,43 @@ app.get(
             return c.json(generateRecordNotExistsReponse('Subject'));
         }
 
-        const subjectStudents = await SubjectStudent.find({
-            subject_id,
+        // Find teacher section
+        const teacher = c.get('teacher');
+        const now = dayjs();
+        const sectionAdviserQuery = {
+            $and: [
+                { section_id },
+                { teacher_id: teacher._id },
+                { start_at: { $lte: now.toDate() } },
+                {
+                    $or: [
+                        { end_at: null },
+                        { end_at: { $exists: false } },
+                        { end_at: { $gt: now.toDate() } },
+                    ],
+                },
+            ],
+        };
+        const sectionAdviser = await SectionAdviser.findOne(sectionAdviserQuery).lean();
+        if (!sectionAdviser) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(statusCodes.NOT_FOUND, 'You are currently not an adviser of the selected section.'))
+        }
+
+        // Get students in the section
+        const sectionStudentQuery = {
             semester_id: semester._id,
-        }).lean();
+            section_id,
+        };
+        const sectionStudents = await SectionStudent.find(sectionStudentQuery)
+            .lean();
+
         const students = await Student.find({
             _id: {
-                $in: subjectStudents.map((subjectStudent) => subjectStudent.student_id),
+                $in: sectionStudents.map((sectionStudent) => sectionStudent.student_id),
             },
         })
-            .sort({ last_name: 1 })
+            .sort({ last_name: 1, first_name: 1 })
             .lean();
 
         const workbook = new ExcelJS.Workbook();

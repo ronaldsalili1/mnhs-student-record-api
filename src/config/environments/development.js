@@ -3,7 +3,7 @@ export default {
         domain: 'localhost',
         port: 3000,
         redis: {
-            host: '127.0.0.1',
+            host: 'mnhs-student-record-redis',
             port: '6379',
             db: 0,
         },
@@ -21,7 +21,7 @@ export default {
         prefix: '/student',
     },
     worker: {
-        domain: '127.0.0.1',
+        domain: 'mnhs-student-record-rabbitmq',
         port: 5672,
         vhost: '',
         queuePrefix: 'mnhs',
