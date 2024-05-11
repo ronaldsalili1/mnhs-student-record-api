@@ -31,7 +31,7 @@ export default {
         strand: ['com_sys_serv'],
     },
     grade: {
-        status: ['pending', 'under_review', 'approved'],
+        status: ['pending', 'under_review', 'approved', 'rejected'],
     },
     form: ['sf10', 'master_gradesheet'],
 };

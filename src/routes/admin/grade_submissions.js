@@ -4,10 +4,8 @@ import { zValidator } from '@hono/zod-validator';
 // Models
 import Student from '../../models/student.js';
 import Subject from '../../models/subject.js';
-import SubjectStudent from '../../models/subject_student.js';
 import GradeSubmission from '../../models/grade_submission.js';
 import Grade from '../../models/grade.js';
-import Admin from '../../models/admin.js';
 import Semester from '../../models/semester.js';
 
 import statusCodes from '../../constants/statusCodes.js';
@@ -18,8 +16,7 @@ import {
 import checkAdminToken from '../../middlewares/checkAdminToken.js';
 
 import validate from '../../helpers/validator.js';
-import { getGradeSubmissionByIdSchema, getGradeSubmissionListSchema } from '../../schema/admin/grade_submissions.js';
-import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
+import { getGradeSubmissionByIdSchema, getGradeSubmissionListSchema, updateGradeSubmissionStatusSchema } from '../../schema/admin/grade_submissions.js';
 
 const app = new Hono().basePath('/grades/submissions');
 
@@ -30,7 +27,14 @@ app.get(
     '/',
     zValidator('query', getGradeSubmissionListSchema, validate),
     async (c) => {
-        const { page, limit } = c.req.valid('query');
+        const {
+            page,
+            limit,
+            status,
+            teacher_id,
+            start_at,
+            end_at,
+        } = c.req.valid('query');
         const skip = limit * (page - 1);
         const admin = c.get('admin');
 
@@ -40,6 +44,14 @@ app.get(
 
         const query = {
             admin_id: admin._id,
+            ...(status && { status }),
+            ...(teacher_id && { teacher_id }),
+            ...(start_at && end_at && {
+                submitted_at: {
+                    $gte: start_at,
+                    $lt: end_at,
+                },
+            }),
         };
         const gradeSubmissions = await GradeSubmission.find(query)
             .limit(limit)
@@ -160,167 +172,49 @@ app.get(
     },
 );
 
-// // POST ENDPOINTS
-// app.post(
-//     '/',
-//     zValidator('json', gradeSubmissionSchema, validate),
-//     checkActiveSemester,
-//     async (c) => {
-//         const teacher = c.get('teacher');
-//         const semester = c.get('semester');
-//         if (!semester) {
-//             c.status(statusCodes.NOT_FOUND);
-//             return c.json(generateResponse(
-//                 statusCodes.NOT_FOUND,
-//                 'There is no active semester at the moment',
-//             ));
-//         }
+// PATCH ENDPOINTS
+app.patch(
+    '/:gradeSubmissionId/update-status',
+    zValidator('param', getGradeSubmissionByIdSchema, validate),
+    zValidator('json', updateGradeSubmissionStatusSchema, validate),
+    async (c) => {
+        const { gradeSubmissionId } = c.req.valid('param');
+        const { grade_submission: gradeSubmissionBody } = c.req.valid('json');
+        const { status } = gradeSubmissionBody;
 
-//         const { grade_submission: gradeSubmissionBody } = c.req.valid('json');
-//         const {
-//             admin_id,
-//             subject_id,
-//             remark,
-//             grades,
-//         } = gradeSubmissionBody;
+        const admin = c.get('admin');
 
-//         const admin = await Admin.exists({ _id: admin_id });
-//         if (!admin) {
-//             c.status(statusCodes.NOT_FOUND);
-//             return c.json(generateRecordNotExistsReponse('Admin'));
-//         }
+        const gradeSubmission = await GradeSubmission.findOne({
+            _id: gradeSubmissionId,
+            admin_id: admin._id,
+            ...(status === 'under_review' && { status: 'pending' }),
+            ...((status === 'approved' || status === 'rejected') && { status: { $in: ['under_review', 'pending'] } }),
+        });
+        if (!gradeSubmission) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Grade Submission'));
+        }
 
-//         const subject = await Subject.exists({ _id: subject_id });
-//         if (!subject) {
-//             c.status(statusCodes.NOT_FOUND);
-//             return c.json(generateRecordNotExistsReponse('Subject'));
-//         }
+        gradeSubmission.status = status;
 
-//         // Check if the teacher already submitted the grade
-//         const gradeSubmissionExist = await GradeSubmission.exists({
-//             semester_id: semester._id,
-//             subject_id,
-//             teacher_id: teacher._id,
-//         });
-//         if (gradeSubmissionExist) {
-//             c.status(statusCodes.CONFLICT);
-//             return c.json(generateResponse(statusCodes.CONFLICT, 'The grades for this subject have already been submitted.'));
-//         }
+        if (status === 'under_review') {
+            gradeSubmission.marked_under_review_at = new Date();
+        }
 
-//         // Create grade submission
-//         const gradeSubmission = await GradeSubmission.create({
-//             admin_id,
-//             semester_id: semester._id,
-//             subject_id,
-//             teacher_id: teacher._id,
-//             status: 'pending',
-//             submitted_at: new Date(),
-//             remark,
-//             created_by: teacher._id,
-//         });
+        if (status === 'rejected') {
+            gradeSubmission.marked_rejected_at = new Date();
+        }
 
-//         // Create grades
-//         await Grade.insertMany(grades.map((grade) => {
-//             const { quarter_1, quarter_2, student_id } = grade || {};
+        if (status === 'approved') {
+            gradeSubmission.marked_approved_at = new Date();
+        }
 
-//             return {
-//                 grade_submission_id: gradeSubmission._id,
-//                 subject_id,
-//                 semester_id: semester._id,
-//                 student_id,
-//                 quarter_1,
-//                 quarter_2,
-//                 created_by: teacher._id,
-//             };
-//         }));
+        gradeSubmission.updated_by = admin._id;
 
-//         c.status(statusCodes.CREATED);
-//         return c.json(generateResponse(statusCodes.OK, 'Success', { grade_submission: gradeSubmission }));
-//     },
-// );
+        gradeSubmission.save();
 
-// // PATCH ENDPOINTS
-// app.patch(
-//     '/:gradeSubmissionId',
-//     zValidator('param', getGradeSubmissionByIdSchema, validate),
-//     zValidator('json', gradeSubmissionSchema, validate),
-//     checkActiveSemester,
-//     async (c) => {
-//         const teacher = c.get('teacher');
-//         const semester = c.get('semester');
-//         if (!semester) {
-//             c.status(statusCodes.NOT_FOUND);
-//             return c.json(generateResponse(
-//                 statusCodes.NOT_FOUND,
-//                 'There is no active semester at the moment',
-//             ));
-//         }
-
-//         const { gradeSubmissionId } = c.req.valid('param');
-//         const { grade_submission: gradeSubmissionBody } = c.req.valid('json');
-//         const {
-//             admin_id,
-//             subject_id,
-//             remark,
-//             grades,
-//         } = gradeSubmissionBody;
-
-//         const gradeSubmission = await GradeSubmission.findById(gradeSubmissionId);
-//         if (!gradeSubmission) {
-//             c.status(statusCodes.NOT_FOUND);
-//             return c.json(generateRecordNotExistsReponse('Grade Submission'));
-//         }
-
-//         const admin = await Admin.exists({ _id: admin_id });
-//         if (!admin) {
-//             c.status(statusCodes.NOT_FOUND);
-//             return c.json(generateRecordNotExistsReponse('Admin'));
-//         }
-
-//         const subject = await Subject.exists({ _id: subject_id });
-//         if (!subject) {
-//             c.status(statusCodes.NOT_FOUND);
-//             return c.json(generateRecordNotExistsReponse('Subject'));
-//         }
-
-//         // Check if the teacher already submitted the grade
-//         const gradeSubmissionExist = await GradeSubmission.exists({
-//             _id: { $ne: gradeSubmissionId },
-//             semester_id: semester._id,
-//             subject_id,
-//             teacher_id: teacher._id,
-//         });
-//         if (gradeSubmissionExist) {
-//             c.status(statusCodes.CONFLICT);
-//             return c.json(generateResponse(statusCodes.CONFLICT, 'The grades for this subject have already been submitted.'));
-//         }
-
-//         // Update grade submission
-//         gradeSubmission.admin_id = admin_id;
-//         gradeSubmission.remark = remark;
-//         gradeSubmission.updated_by = teacher._id;
-//         await gradeSubmission.save();
-
-//         // Delete all grades under gradeSubmissionId
-//         await Grade.deleteMany({ grade_submission_id: gradeSubmissionId });
-
-//         // Create grades
-//         await Grade.insertMany(grades.map((grade) => {
-//             const { quarter_1, quarter_2, student_id } = grade || {};
-
-//             return {
-//                 grade_submission_id: gradeSubmission._id,
-//                 subject_id,
-//                 semester_id: semester._id,
-//                 student_id,
-//                 quarter_1,
-//                 quarter_2,
-//                 created_by: teacher._id,
-//             };
-//         }));
-
-//         return c.json(generateResponse(statusCodes.OK, 'Success', { grade_submission: gradeSubmission }));
-//     },
-// );
+        return c.json(generateResponse(statusCodes.OK, 'Success', { grade_submission: gradeSubmission }));
+    },
+);
 
 export default app;

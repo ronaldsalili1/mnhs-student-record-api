@@ -15,6 +15,7 @@ const schema = new Schema(
         submitted_at: { type: Date, required: true },
         marked_under_review_at: { type: Date },
         marked_approved_at: { type: Date },
+        marked_rejected_at: { type: Date },
         remark: { type: String },
         created_by: { type: Schema.Types.ObjectId },
         updated_by: { type: Schema.Types.ObjectId },

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import bcrypt from 'bcrypt';
+import { zValidator } from '@hono/zod-validator';
 
 import Teacher from '../../models/teacher.js';
 import checkAdminToken from '../../middlewares/checkAdminToken.js';
@@ -8,6 +9,8 @@ import statusCodes from '../../constants/statusCodes.js';
 import { generateRandomString } from '../../helpers/general.js';
 import { publish } from '../../helpers/rabbitmq.js';
 import config from '../../config/index.js';
+import { getTeacherOptionsSchema } from '../../schema/admin/teachers.js';
+import validate from '../../helpers/validator.js';
 
 const app = new Hono().basePath('/teachers');
 
@@ -57,6 +60,46 @@ app.get(
         }));
     },
 );
+
+app.get(
+    '/options',
+    zValidator('query', getTeacherOptionsSchema, validate),
+    async (c) => {
+        const {
+            page,
+            limit,
+            keyword,
+        } = c.req.valid('query');
+        const skip = limit * (page - 1);
+
+        const teacherQuery = {
+            ...(keyword && {
+                $or: [
+                    { first_name: { $regex: keyword, $options: 'i' } },
+                    { last_name: { $regex: keyword, $options: 'i' } },
+                    { middle_name: { $regex: keyword, $options: 'i' } },
+                    { suffix: { $regex: keyword, $options: 'i' } },
+                ],
+            }),
+        };
+
+        const total = await Teacher.countDocuments(teacherQuery);
+        const teachers = await Teacher.find(teacherQuery)
+            .limit(limit)
+            .skip(skip)
+            .sort({ last_name: 1, first_name: 1, middle_name: 1 })
+            .lean();
+
+        return c.json(generateResponse(statusCodes.OK, 'Success', {
+            total,
+            page,
+            limit,
+            count: teachers.length,
+            teachers,
+        }));
+    },
+);
+
 app.get(
     '/:teacherId',
     async (c) => {
