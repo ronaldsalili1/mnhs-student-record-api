@@ -20,4 +20,8 @@ export const downloadTemplateSchema = z.object({
             24,
             { message: 'Section ID must be exactly 24 characters long' },
         ),
+    quarter: z.coerce.number({
+        required_error: 'Quarter is required',
+        invalid_type_error: 'Quarter must be a number',
+    }),
 });

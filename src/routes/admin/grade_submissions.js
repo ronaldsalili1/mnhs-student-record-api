@@ -8,6 +8,7 @@ import SubjectStudent from '../../models/subject_student.js';
 import GradeSubmission from '../../models/grade_submission.js';
 import Grade from '../../models/grade.js';
 import Admin from '../../models/admin.js';
+import Semester from '../../models/semester.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import {
@@ -18,6 +19,7 @@ import checkAdminToken from '../../middlewares/checkAdminToken.js';
 
 import validate from '../../helpers/validator.js';
 import { getGradeSubmissionByIdSchema, getGradeSubmissionListSchema } from '../../schema/admin/grade_submissions.js';
+import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
 
 const app = new Hono().basePath('/grades/submissions');
 
@@ -68,13 +70,28 @@ app.get(
     zValidator('param', getGradeSubmissionByIdSchema, validate),
     async (c) => {
         const { gradeSubmissionId } = c.req.valid('param');
+        const admin = c.get('admin');
 
-        const gradeSubmission = await GradeSubmission.findById(gradeSubmissionId)
+        const gradeSubmission = await GradeSubmission.findOne({
+            _id: gradeSubmissionId,
+            admin_id: admin._id,
+        })
+            .populate('teacher_id')
             .lean();
         if (!gradeSubmission) {
             c.status(statusCodes.NOT_FOUND);
             return c.json(generateRecordNotExistsReponse('Grade Submission'));
         }
+
+        const semester = await Semester.findById(gradeSubmission.semester_id).lean();
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Semester'));
+        }
+
+        gradeSubmission.teacher = gradeSubmission.teacher_id;
+        delete gradeSubmission.teacher_id;
+        delete gradeSubmission.teacher.password;
 
         const subject = await Subject.findById(gradeSubmission.subject_id).lean();
         if (!subject) {
@@ -96,6 +113,12 @@ app.get(
             const student = students.find((student) => (
                 student._id.toString() === grade.student_id._id.toString()
             ));
+
+            if (gradeSubmission.quarter === 1) {
+                grade.grade = grade.quarter_1;
+            } else if (gradeSubmission.quarter === 2) {
+                grade.grade = grade.quarter_2;
+            }
 
             grade.student = student;
             delete grade.student_id;
@@ -128,7 +151,9 @@ app.get(
         });
 
         return c.json(generateResponse(statusCodes.OK, 'Success', {
+            semester,
             subject,
+            quarter: gradeSubmission.quarter,
             grade_submission: gradeSubmission,
             student_grade_data: grades,
         }));

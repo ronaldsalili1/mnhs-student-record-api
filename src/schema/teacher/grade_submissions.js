@@ -25,6 +25,10 @@ export const gradeSubmissionSchema = z.object({
                 24,
                 { message: 'Subject ID must be exactly 24 characters long' },
             ),
+        quarter: z.number({
+            required_error: 'Quarter is required',
+            invalid_type_error: 'Quarter must be a number',
+        }),
         remark: z.string({ invalid_type_error: 'Remark must be a string' }).optional(),
         grades: z.array(
             z.object({
@@ -37,8 +41,7 @@ export const gradeSubmissionSchema = z.object({
                         24,
                         { message: 'Student ID must be exactly 24 characters long' },
                     ),
-                quarter_1: z.number({ invalid_type_error: 'Quarter 1 must be a number' }).optional(),
-                quarter_2: z.number({ invalid_type_error: 'Quarter 1 must be a number' }).optional(),
+                grade: z.number({ invalid_type_error: 'Grade must be a number' }).optional(),
             }),
         )
             .nonempty({ message: 'Grades must not be empty' }),

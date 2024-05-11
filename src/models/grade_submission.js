@@ -10,6 +10,7 @@ const schema = new Schema(
         semester_id: { type: Schema.Types.ObjectId, required: true, ref: 'Semester' },
         subject_id: { type: Schema.Types.ObjectId, required: true, ref: 'Subject' },
         teacher_id: { type: Schema.Types.ObjectId, required: true, ref: 'Teacher' },
+        quarter: { type: Number, required: true },
         status: { type: String, enum: commonEnums.grade.status, required: true },
         submitted_at: { type: Date, required: true },
         marked_under_review_at: { type: Date },

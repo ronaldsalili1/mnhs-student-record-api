@@ -7,18 +7,12 @@ import dayjs from 'dayjs';
 // Models
 import Student from '../../models/student.js';
 import Subject from '../../models/subject.js';
-import Semester from '../../models/semester.js';
-import SubjectStudent from '../../models/subject_student.js';
-import GradeSubmission from '../../models/grade_submission.js';
-import Grade from '../../models/grade.js';
-import Admin from '../../models/admin.js';
 import SectionAdviser from '../../models/section_adviser.js';
 import SectionStudent from '../../models/section_student.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import {
     generateInternalServerError,
-    generateRecordExistsReponse,
     generateRecordNotExistsReponse,
     generateResponse,
 } from '../../helpers/response.js';
@@ -38,7 +32,7 @@ app.get(
     zValidator('query', downloadTemplateSchema, validate),
     checkActiveSemester,
     async (c) => {
-        const { subject_id, section_id } = c.req.valid('query');
+        const { subject_id, section_id, quarter } = c.req.valid('query');
 
         const semester = c.get('semester');
         if (!semester) {
@@ -76,7 +70,7 @@ app.get(
         const sectionAdviser = await SectionAdviser.findOne(sectionAdviserQuery).lean();
         if (!sectionAdviser) {
             c.status(statusCodes.NOT_FOUND);
-            return c.json(generateResponse(statusCodes.NOT_FOUND, 'You are currently not an adviser of the selected section.'))
+            return c.json(generateResponse(statusCodes.NOT_FOUND, 'You are currently not an adviser of the selected section.'));
         }
 
         // Get students in the section
@@ -120,6 +114,9 @@ app.get(
         cell = worksheet.getCell('A5');
         cell.value = 'Semester:';
 
+        cell = worksheet.getCell('A6');
+        cell.value = 'Quarter:';
+
         col = worksheet.getColumn(2);
         col.width = 25;
         col.alignment = { horizontal: 'left' };
@@ -139,12 +136,12 @@ app.get(
         cell = worksheet.getCell('B5');
         cell.value = semester.term;
 
+        cell = worksheet.getCell('B6');
+        cell.value = quarter;
+
         await worksheet.protect(generateRandomString());
 
-        worksheet = workbook.addWorksheet('Grades', { views: [{ state: 'frozen', xSplit: 4, ySplit: 2 }] });
-        worksheet.mergeCells('A1:A2');
-        worksheet.mergeCells('B1:B2');
-        worksheet.mergeCells('C1:D1');
+        worksheet = workbook.addWorksheet('Grades', { views: [{ state: 'frozen', xSplit: 3, ySplit: 1 }] });
 
         cell = worksheet.getCell('A1');
         cell.value = 'LRN';
@@ -153,27 +150,19 @@ app.get(
         cell.value = 'Name';
 
         cell = worksheet.getCell('C1');
-        cell.value = 'Grades';
+        cell.value = 'Grade';
 
-        cell = worksheet.getCell('C2');
-        cell.value = 'Q1';
-
-        cell = worksheet.getCell('D2');
-        cell.value = 'Q2';
-
-        const rows = worksheet.getRows(1, 2);
-        rows.forEach((row) => {
-            row.alignment = { horizontal: 'center', vertical: 'middle' };
-            row.font = { bold: true };
-        });
+        const row = worksheet.getRow(1);
+        row.alignment = { horizontal: 'center', vertical: 'middle' };
+        row.font = { bold: true };
 
         for (let i = 0; i < students.length; i++) {
             const student = students[i];
 
-            cell = worksheet.getCell(`A${i + 3}`);
+            cell = worksheet.getCell(`A${i + 2}`);
             cell.value = student.lrn;
 
-            cell = worksheet.getCell(`B${i + 3}`);
+            cell = worksheet.getCell(`B${i + 2}`);
             cell.value = formatFullName(student);
         }
 
@@ -185,14 +174,14 @@ app.get(
 
         col = worksheet.getColumn(3);
         col.eachCell((cell, rowNumber) => {
-            if (rowNumber > 2) {
+            if (rowNumber > 1) {
                 cell.protection = { locked: false };
             }
         });
 
         col = worksheet.getColumn(4);
         col.eachCell((cell, rowNumber) => {
-            if (rowNumber > 2) {
+            if (rowNumber > 1) {
                 cell.protection = { locked: false };
             }
         });
@@ -201,7 +190,7 @@ app.get(
 
         // Set appropriate response headers for Excel download
         c.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        c.header('Content-Disposition', `attachment; filename=${slugify(subject.name.toLowerCase())}-template.xlsx`);
+        c.header('Content-Disposition', `attachment; filename=${slugify(subject.name.toLowerCase())}-quarter${quarter}-template.xlsx`);
 
         const buffer = await workbook.xlsx.writeBuffer();
 
@@ -226,14 +215,19 @@ app.post(
 
         const studentGradeData = [];
         let subject;
+        let cell;
+        let quarter;
         try {
             const workbook = new ExcelJS.Workbook();
             await workbook.xlsx.read(file.stream());
 
             let worksheet = workbook.getWorksheet('Information');
 
-            const cell = worksheet.getCell('B1');
+            cell = worksheet.getCell('B1');
             const subjectId = cell.value;
+
+            cell = worksheet.getCell('B6');
+            quarter = cell.value;
 
             subject = await Subject.findById(subjectId).lean();
             if (!subject) {
@@ -246,7 +240,7 @@ app.post(
             const col = worksheet.getColumn(1);
             const studentLrns = [];
             col.eachCell((cell, rowNumber) => {
-                if (rowNumber > 2) {
+                if (rowNumber > 1) {
                     studentLrns.push(cell.value);
                 }
             });
@@ -256,18 +250,16 @@ app.post(
                 .lean();
 
             col.eachCell((cell, rowNumber) => {
-                if (rowNumber > 2) {
+                if (rowNumber > 1) {
                     const lrn = cell.value;
-                    const gradeQ1 = worksheet.getCell(`C${rowNumber}`).value;
-                    const gradeQ2 = worksheet.getCell(`D${rowNumber}`).value;
+                    const grade = worksheet.getCell(`C${rowNumber}`).value;
 
                     const student = students.find((student) => student.lrn === lrn);
 
                     studentGradeData.push({
                         _id: generateRandomString(),
                         student,
-                        ...(Number.isInteger(gradeQ1) && { quarter_1: gradeQ1 }),
-                        ...(Number.isInteger(gradeQ2) && { quarter_2: gradeQ2 }),
+                        ...(Number.isInteger(grade) && { grade }),
                     });
                 }
             });
@@ -280,6 +272,7 @@ app.post(
         return c.json(generateResponse(statusCodes.OK, 'Success', {
             semester,
             subject,
+            quarter,
             student_grade_data: studentGradeData,
         }));
     },

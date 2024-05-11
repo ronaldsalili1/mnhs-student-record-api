@@ -5,14 +5,20 @@ import { zValidator } from '@hono/zod-validator';
 // Models
 import Subject from '../../models/subject.js';
 import Section from '../../models/section.js';
-import SubjectTeacher from '../../models/subject_teacher.js';
 import SectionSubject from '../../models/section_subject.js';
 import SectionAdviser from '../../models/section_adviser.js';
+import SubjectStudent from '../../models/subject_student.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import { generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
 import checkTeacherToken from '../../middlewares/checkTeacherToken.js';
-import { getSubjectListSchema, getSubjectByIdSchema, getSubjectOptionsSchema, createSectionSubjects } from '../../schema/teacher/subjects.js';
+import {
+    getSubjectListSchema,
+    getSubjectByIdSchema,
+    getSubjectOptionsSchema,
+    createSectionSubjects,
+    deleteSectionSubjectByIdSchema,
+} from '../../schema/teacher/subjects.js';
 import validate from '../../helpers/validator.js';
 import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
 
@@ -68,6 +74,14 @@ app.get(
             .sort({ name: 1 })
             .lean();
 
+        subjects.forEach((subject) => {
+            // eslint-disable-next-line arrow-body-style
+            const sectionSubject = sectionSubjects.find((sectionSubject) => {
+                return sectionSubject.subject_id.toString() === subject._id.toString();
+            });
+
+            subject.section_subject_id = sectionSubject._id;
+        });
         return c.json(generateResponse(statusCodes.OK, 'Success', {
             total,
             page,
@@ -89,7 +103,6 @@ app.get(
             type,
             exclude,
         } = c.req.valid('query');
-            console.log('🚀 ~ exclude:', exclude);
 
         const skip = limit * (page - 1);
         const query = {
@@ -183,20 +196,42 @@ app.post(
 );
 
 // DELETE ENDPOINTS
-// app.delete(
-//     '/:sectionStudentId',
-//     zValidator('param', deleteSectionStudentByIdSchema, validate),
-//     async (c) => {
-//         const { sectionStudentId } = c.req.valid('param');
+app.delete(
+    '/:sectionSubjectId',
+    zValidator('param', deleteSectionSubjectByIdSchema, validate),
+    checkActiveSemester,
+    async (c) => {
+        const { sectionSubjectId } = c.req.valid('param');
 
-//         const sectionStudent = await SectionStudent.findByIdAndDelete(sectionStudentId);
-//         if (!sectionStudent) {
-//             c.status(statusCodes.NOT_FOUND);
-//             return c.json(generateResponse(statusCodes.NOT_FOUND, 'The student is currenly not registered in this section.'));
-//         }
+        // Check for duplicates
+        const semester = c.get('semester');
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(
+                statusCodes.NOT_FOUND,
+                'There is no active semester at the moment',
+            ));
+        }
 
-//         return c.json(generateResponse(statusCodes.OK, 'Success', { section_student: sectionStudent }));
-//     },
-// );
+        const sectionSubject = await SectionSubject.findById(sectionSubjectId);
+        if (!sectionSubject) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Section Subject'));
+        }
+
+        const subjectStudentCount = await SubjectStudent.countDocuments({
+            subject_id: sectionSubject.subject_id,
+            semester_id: semester._id,
+        });
+        if (subjectStudentCount > 0) {
+            c.status(statusCodes.FORBIDDEN);
+            return c.json(generateResponse(statusCodes.FORBIDDEN, 'Subject cannot be deleted because there is a student currently enrolled in it'));
+        }
+
+        await sectionSubject.deleteOne();
+
+        return c.json(generateResponse(statusCodes.OK, 'Success', { section_subject: sectionSubject }));
+    },
+);
 
 export default app;

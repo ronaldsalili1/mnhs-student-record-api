@@ -101,6 +101,12 @@ app.get(
                 student._id.toString() === grade.student_id._id.toString()
             ));
 
+            if (gradeSubmission.quarter === 1) {
+                grade.grade = grade.quarter_1;
+            } else if (gradeSubmission.quarter === 2) {
+                grade.grade = grade.quarter_2;
+            }
+
             grade.student = student;
             delete grade.student_id;
         });
@@ -134,6 +140,7 @@ app.get(
         return c.json(generateResponse(statusCodes.OK, 'Success', {
             semester,
             subject,
+            quarter: gradeSubmission.quarter,
             grade_submission: gradeSubmission,
             student_grade_data: grades,
         }));
@@ -162,6 +169,7 @@ app.post(
             subject_id,
             remark,
             grades,
+            quarter,
         } = gradeSubmissionBody;
 
         const admin = await Admin.exists({ _id: admin_id });
@@ -170,7 +178,7 @@ app.post(
             return c.json(generateRecordNotExistsReponse('Admin'));
         }
 
-        const subject = await Subject.exists({ _id: subject_id });
+        const subject = await Subject.findById(subject_id).lean();
         if (!subject) {
             c.status(statusCodes.NOT_FOUND);
             return c.json(generateRecordNotExistsReponse('Subject'));
@@ -193,26 +201,54 @@ app.post(
             semester_id: semester._id,
             subject_id,
             teacher_id: teacher._id,
+            quarter,
             status: 'pending',
             submitted_at: new Date(),
             remark,
             created_by: teacher._id,
         });
 
-        // Create grades
+        const subjectStudents = await SubjectStudent.find({
+            subject_id,
+            semester_id: semester._id,
+            student_id: {
+                $in: grades.map((grade) => grade.student_id),
+            },
+        }).lean();
+        // eslint-disable-next-line max-len
+        const subjectStudentIds = subjectStudents.map((subjectStudent) => subjectStudent._id.toString());
+
+        // Create grades and subjectStudents
+        const newSubjectStudents = [];
         await Grade.insertMany(grades.map((grade) => {
-            const { quarter_1, quarter_2, student_id } = grade || {};
+            const { grade: gradeVal, student_id } = grade || {};
+
+            if (!subjectStudentIds.includes(student_id)) {
+                newSubjectStudents.push({
+                    subject_id,
+                    semester_id: semester._id,
+                    student_id,
+                    subject_name_snapshot: subject.name,
+                    subject_type_snapshot: subject.type,
+                    sy_start_snapshot: semester.sy_start_year,
+                    sy_end_snapshot: semester.sy_end_year,
+                    semester_term_snapshot: semester.term,
+                    created_by: teacher._id,
+                });
+            }
 
             return {
                 grade_submission_id: gradeSubmission._id,
                 subject_id,
                 semester_id: semester._id,
                 student_id,
-                quarter_1,
-                quarter_2,
+                ...(quarter === 1 && { quarter_1: gradeVal }),
+                ...(quarter === 2 && { quarter_2: gradeVal }),
                 created_by: teacher._id,
             };
         }));
+
+        await SubjectStudent.insertMany(newSubjectStudents);
 
         c.status(statusCodes.CREATED);
         return c.json(generateResponse(statusCodes.OK, 'Success', { grade_submission: gradeSubmission }));
@@ -285,16 +321,17 @@ app.patch(
         await Grade.deleteMany({ grade_submission_id: gradeSubmissionId });
 
         // Create grades
+        const { quarter } = gradeSubmission || {};
         await Grade.insertMany(grades.map((grade) => {
-            const { quarter_1, quarter_2, student_id } = grade || {};
+            const { grade: gradeVal, student_id } = grade || {};
 
             return {
                 grade_submission_id: gradeSubmission._id,
                 subject_id,
                 semester_id: semester._id,
                 student_id,
-                quarter_1,
-                quarter_2,
+                ...(quarter === 1 && { quarter_1: gradeVal }),
+                ...(quarter === 2 && { quarter_2: gradeVal }),
                 created_by: teacher._id,
             };
         }));
