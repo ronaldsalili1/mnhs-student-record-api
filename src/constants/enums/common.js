@@ -12,6 +12,7 @@ export default {
         type: [
             'account_creation',
             'password_reset_request',
+            'grade_submission',
         ],
         status: [
             'queued',

@@ -19,6 +19,7 @@ app.use('*', checkAdminToken);
 // GET ENDPOINTS
 app.get(
     '/',
+    checkActiveSemester,
     async (c) => {
         const {
             page = 1,
@@ -29,8 +30,13 @@ app.get(
         } = c.req.query();
         const skip = limit * (page - 1);
 
+        const semester = c.get('semester');
+        if (!semester && !semester_id) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(statusCodes.NOT_FOUND, 'Please select a semester to proceed'));
+        }
+
         // Check if there is an active semester
-        const semester = await Semester.findOne({ status: 'active' }).lean();
         const query = {
             ...(semester && { semester_id: semester._id }),
             ...(subject_id && { subject_id }),
@@ -39,24 +45,54 @@ app.get(
         };
 
         const total = await SubjectStudent.countDocuments(query);
-        const subjectStudents = await SubjectStudent.find(query)
+        const subjectStudents = await SubjectStudent.find(query).lean();
+        const students = await Student.find({
+            _id: {
+                $in: subjectStudents.map((subjectStudent) => subjectStudent.student_id),
+            },
+            // ...(keyword && {
+            //     $or: [
+            //         { first_name: { $regex: keyword, $options: 'i' } },
+            //         { last_name: { $regex: keyword, $options: 'i' } },
+            //         { middle_name: { $regex: keyword, $options: 'i' } },
+            //         { suffix: { $regex: keyword, $options: 'i' } },
+            //         { lrn: { $regex: keyword, $options: 'i' } },
+            //     ],
+            // }),
+        })
             .limit(limit)
             .skip(skip)
-            .populate('student_id')
-            .sort({ 'student_id.last_name': 1 })
+            .sort({ last_name: 1 })
             .lean();
 
-        subjectStudents.forEach((subjectStudent) => {
-            subjectStudent.student = subjectStudent.student_id;
-            delete subjectStudent.student_id;
+        // Get Grades
+        const gradeQuery = {
+            subject_id,
+            semester_id: semester_id || semester._id,
+            student_id: {
+                $in: students.map((student) => student._id),
+            },
+        };
+        const grades = await Grade.find(gradeQuery).lean();
+
+        students.forEach((student) => {
+            const subjectStudent = subjectStudents
+            // eslint-disable-next-line max-len
+                .find((subjectStudent) => subjectStudent.student_id.toString() === student._id.toString());
+            const grade = grades.find((grade) => (
+                grade.student_id.toString() === student._id.toString()
+            ));
+
+            student.subject_student_id = subjectStudent._id;
+            student.grade = grade;
         });
 
         return c.json(generateResponse(statusCodes.OK, 'Success', {
             total,
             page,
             limit,
-            count: subjectStudents.length,
-            subject_students: subjectStudents,
+            count: students.length,
+            subject_students: students,
         }));
     },
 );

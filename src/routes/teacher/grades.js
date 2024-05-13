@@ -7,8 +7,10 @@ import dayjs from 'dayjs';
 // Models
 import Student from '../../models/student.js';
 import Subject from '../../models/subject.js';
+import Section from '../../models/section.js';
 import SectionAdviser from '../../models/section_adviser.js';
 import SectionStudent from '../../models/section_student.js';
+import SectionSubject from '../../models/section_subject.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import {
@@ -48,6 +50,12 @@ app.get(
         if (!subject) {
             c.status(statusCodes.NOT_FOUND);
             return c.json(generateRecordNotExistsReponse('Subject'));
+        }
+
+        const section = await Section.findById(section_id).lean();
+        if (!subject) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Section'));
         }
 
         // Find teacher section
@@ -117,6 +125,12 @@ app.get(
         cell = worksheet.getCell('A6');
         cell.value = 'Quarter:';
 
+        cell = worksheet.getCell('A7');
+        cell.value = 'Section ID:';
+
+        cell = worksheet.getCell('A8');
+        cell.value = 'Section Name:';
+
         col = worksheet.getColumn(2);
         col.width = 25;
         col.alignment = { horizontal: 'left' };
@@ -138,6 +152,12 @@ app.get(
 
         cell = worksheet.getCell('B6');
         cell.value = quarter;
+
+        cell = worksheet.getCell('B7');
+        cell.value = section_id;
+
+        cell = worksheet.getCell('B8');
+        cell.value = section.name;
 
         await worksheet.protect(generateRandomString());
 
@@ -215,6 +235,7 @@ app.post(
 
         const studentGradeData = [];
         let subject;
+        let section;
         let cell;
         let quarter;
         try {
@@ -229,10 +250,33 @@ app.post(
             cell = worksheet.getCell('B6');
             quarter = cell.value;
 
+            cell = worksheet.getCell('B7');
+            const sectionId = cell.value;
+
             subject = await Subject.findById(subjectId).lean();
             if (!subject) {
                 c.status(statusCodes.NOT_FOUND);
                 return c.json(generateRecordNotExistsReponse('Student'));
+            }
+
+            section = await Section.findById(sectionId).lean();
+            if (!section) {
+                c.status(statusCodes.NOT_FOUND);
+                return c.json(generateRecordNotExistsReponse('Section'));
+            }
+
+            // Check if the subject is in section subjects for the semester
+            const sectionSubjectExist = await SectionSubject.exists({
+                section_id: sectionId,
+                semester_id: semester._id,
+                subject_id: subjectId,
+            });
+            if (!sectionSubjectExist) {
+                c.status(statusCodes.NOT_FOUND);
+                return c.json(generateResponse(
+                    statusCodes.NOT_FOUND,
+                    `The subject "${subject.name}" is currently not present in your section`,
+                ));
             }
 
             // Read the data in the excel file
@@ -273,6 +317,7 @@ app.post(
             semester,
             subject,
             quarter,
+            section,
             student_grade_data: studentGradeData,
         }));
     },

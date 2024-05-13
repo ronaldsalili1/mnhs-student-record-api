@@ -7,6 +7,7 @@ import Subject from '../../models/subject.js';
 import GradeSubmission from '../../models/grade_submission.js';
 import Grade from '../../models/grade.js';
 import Semester from '../../models/semester.js';
+import Section from '../../models/section.js';
 
 import statusCodes from '../../constants/statusCodes.js';
 import {
@@ -111,6 +112,12 @@ app.get(
             return c.json(generateRecordNotExistsReponse('Subject'));
         }
 
+        const section = await Section.findById(gradeSubmission.section_id).lean();
+        if (!section) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Section'));
+        }
+
         const grades = await Grade.find({ grade_submission_id: gradeSubmissionId })
             .populate('student_id')
             .lean();
@@ -165,6 +172,7 @@ app.get(
         return c.json(generateResponse(statusCodes.OK, 'Success', {
             semester,
             subject,
+            section,
             quarter: gradeSubmission.quarter,
             grade_submission: gradeSubmission,
             student_grade_data: grades,

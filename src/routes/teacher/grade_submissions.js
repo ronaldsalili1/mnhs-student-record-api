@@ -6,9 +6,12 @@ import Student from '../../models/student.js';
 import Subject from '../../models/subject.js';
 import SubjectStudent from '../../models/subject_student.js';
 import GradeSubmission from '../../models/grade_submission.js';
+import SectionSubject from '../../models/section_subject.js';
 import Grade from '../../models/grade.js';
 import Admin from '../../models/admin.js';
+import Section from '../../models/section.js';
 
+import config from '../../config/index.js';
 import statusCodes from '../../constants/statusCodes.js';
 import {
     generateRecordNotExistsReponse,
@@ -16,9 +19,11 @@ import {
 } from '../../helpers/response.js';
 import checkTeacherToken from '../../middlewares/checkTeacherToken.js';
 import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
+import { publish } from '../../helpers/rabbitmq.js';
 
 import validate from '../../helpers/validator.js';
 import { getGradeSubmissionByIdSchema, getGradeSubmissionListSchema, gradeSubmissionSchema } from '../../schema/teacher/grade_submissions.js';
+import { formatFullName } from '../../helpers/general.js';
 
 const app = new Hono().basePath('/grades/submissions');
 
@@ -86,6 +91,12 @@ app.get(
             return c.json(generateRecordNotExistsReponse('Subject'));
         }
 
+        const section = await Section.findById(gradeSubmission.section_id).lean();
+        if (!section) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Section'));
+        }
+
         const grades = await Grade.find({ grade_submission_id: gradeSubmissionId })
             .populate('student_id')
             .lean();
@@ -140,6 +151,7 @@ app.get(
         return c.json(generateResponse(statusCodes.OK, 'Success', {
             semester,
             subject,
+            section,
             quarter: gradeSubmission.quarter,
             grade_submission: gradeSubmission,
             student_grade_data: grades,
@@ -170,9 +182,10 @@ app.post(
             remark,
             grades,
             quarter,
+            section_id,
         } = gradeSubmissionBody;
 
-        const admin = await Admin.exists({ _id: admin_id });
+        const admin = await Admin.findById(admin_id).lean();
         if (!admin) {
             c.status(statusCodes.NOT_FOUND);
             return c.json(generateRecordNotExistsReponse('Admin'));
@@ -184,15 +197,36 @@ app.post(
             return c.json(generateRecordNotExistsReponse('Subject'));
         }
 
+        const section = await Section.findById(section_id).lean();
+        if (!section) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateRecordNotExistsReponse('Section'));
+        }
+
         // Check if the teacher already submitted the grade
         const gradeSubmissionExist = await GradeSubmission.exists({
             semester_id: semester._id,
             subject_id,
             teacher_id: teacher._id,
+            quarter,
         });
         if (gradeSubmissionExist) {
             c.status(statusCodes.CONFLICT);
             return c.json(generateResponse(statusCodes.CONFLICT, 'The grades for this subject have already been submitted.'));
+        }
+
+        // Check if the subject is in section subjects for the semester
+        const sectionSubjectExist = await SectionSubject.exists({
+            section_id,
+            semester_id: semester._id,
+            subject_id,
+        });
+        if (!sectionSubjectExist) {
+            c.status(statusCodes.NOT_FOUND);
+            return c.json(generateResponse(
+                statusCodes.NOT_FOUND,
+                `The subject "${subject.name}" is currently not present in your section`,
+            ));
         }
 
         // Create grade submission
@@ -200,6 +234,7 @@ app.post(
             admin_id,
             semester_id: semester._id,
             subject_id,
+            section_id,
             teacher_id: teacher._id,
             quarter,
             status: 'pending',
@@ -249,6 +284,24 @@ app.post(
         }));
 
         await SubjectStudent.insertMany(newSubjectStudents);
+
+        // Send notification to head teacher
+        try {
+            await publish('spawn_notification', {
+                type: 'grade_submission',
+                to: admin.email,
+                admin_fname: admin.first_name,
+                admin_lname: admin.last_name,
+                teacher_full_name: formatFullName(teacher),
+                subject_name: subject.name,
+                section_name: section.name,
+                quarter,
+                remark: remark || '-',
+                link: `${config.admin.host}${config.admin.prefix}/grade-submissions/${gradeSubmission._id}`,
+            });
+        } catch (error) {
+            return c.json(generateResponse(statusCodes.BAD_REQUEST, 'Unable to send account creation notification'));
+        }
 
         c.status(statusCodes.CREATED);
         return c.json(generateResponse(statusCodes.OK, 'Success', { grade_submission: gradeSubmission }));

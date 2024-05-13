@@ -9,6 +9,7 @@ const schema = new Schema(
         admin_id: { type: Schema.Types.ObjectId, required: true, ref: 'Admin' },
         semester_id: { type: Schema.Types.ObjectId, required: true, ref: 'Semester' },
         subject_id: { type: Schema.Types.ObjectId, required: true, ref: 'Subject' },
+        section_id: { type: Schema.Types.ObjectId, required: true, ref: 'Section' },
         teacher_id: { type: Schema.Types.ObjectId, required: true, ref: 'Teacher' },
         quarter: { type: Number, required: true },
         status: { type: String, enum: commonEnums.grade.status, required: true },
