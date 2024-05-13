@@ -5,10 +5,12 @@ import Semester from '../../models/semester.js';
 import Subject from '../../models/subject.js';
 import SubjectStudent from '../../models/subject_student.js';
 import Student from '../../models/student.js';
+import Grade from '../../models/grade.js';
 
 import checkAdminToken from '../../middlewares/checkAdminToken.js';
 import { generateRecordExistsReponse, generateRecordNotExistsReponse, generateResponse } from '../../helpers/response.js';
 import statusCodes from '../../constants/statusCodes.js';
+import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
 
 const app = new Hono().basePath('/subject-students');
 
@@ -158,14 +160,41 @@ app.post(
 // DELETE ENDPOINTS
 app.delete(
     '/:subjectStudentId',
+    checkActiveSemester,
     async (c) => {
         const id = c.req.param('subjectStudentId');
 
-        const subjectStudent = await SubjectStudent.findByIdAndDelete(id);
+        const semester = c.get('semester');
+        if (!semester) {
+            c.status(statusCodes.NOT_FOUND);
+            const msg = 'There is no active semester at the moment. '
+                + 'You cannot delete a student when there is not active semester.';
+            return c.json(generateResponse(statusCodes.NOT_FOUND, msg));
+        }
+
+        const subjectStudent = await SubjectStudent.findById(id);
         if (!subjectStudent) {
             c.status(statusCodes.NOT_FOUND);
             return c.json(generateRecordNotExistsReponse('Subject student'));
         }
+
+        if (semester._id.toString() !== subjectStudent.semester_id.toString()) {
+            c.status(statusCodes.CONFLICT);
+            return c.json(generateResponse(statusCodes.CONFLICT, 'Cannot delete student under inactive semester'));
+        }
+
+        // Check if student already has grade
+        const gradeExist = await Grade.exists({
+            subject_id: subjectStudent.subject_id,
+            semester_id: semester._id,
+            student_id: subjectStudent.student_id,
+        });
+        if (gradeExist) {
+            c.status(statusCodes.FORBIDDEN);
+            return c.json(generateResponse(statusCodes.FORBIDDEN, 'You cannot delete a student who has existing grades'));
+        }
+
+        await subjectStudent.deleteOne();
 
         return c.json(generateResponse(statusCodes.OK, 'Success', { subject_student: subjectStudent }));
     },

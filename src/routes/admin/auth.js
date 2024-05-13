@@ -20,6 +20,7 @@ import { authJsonSchema, passwordResetRequestSchema, resetPasswordSchema } from 
 import validate from '../../helpers/validator.js';
 import { generateRandomString } from '../../helpers/general.js';
 import { publish } from '../../helpers/rabbitmq.js';
+import checkActiveSemester from '../../middlewares/checkActiveSemester.js';
 
 const app = new Hono().basePath('/auth');
 
@@ -27,11 +28,13 @@ const app = new Hono().basePath('/auth');
 app.get(
     '/authenticated',
     checkAdminToken,
+    checkActiveSemester,
     async (c) => {
         const admin = c.get('admin');
         delete admin.password;
 
-        return c.json(generateResponse(statusCodes.OK, 'Success', { admin }));
+        const semester = c.get('semester');
+        return c.json(generateResponse(statusCodes.OK, 'Success', { admin, semester }));
     },
 );
 
