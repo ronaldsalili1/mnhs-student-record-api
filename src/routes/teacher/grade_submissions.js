@@ -112,12 +112,6 @@ app.get(
                 student._id.toString() === grade.student_id._id.toString()
             ));
 
-            if (gradeSubmission.quarter === 1) {
-                grade.grade = grade.quarter_1;
-            } else if (gradeSubmission.quarter === 2) {
-                grade.grade = grade.quarter_2;
-            }
-
             grade.student = student;
             delete grade.student_id;
         });
@@ -277,8 +271,8 @@ app.post(
                 subject_id,
                 semester_id: semester._id,
                 student_id,
-                ...(quarter === 1 && { quarter_1: gradeVal }),
-                ...(quarter === 2 && { quarter_2: gradeVal }),
+                quarter,
+                grade: gradeVal,
                 created_by: teacher._id,
             };
         }));
@@ -334,7 +328,10 @@ app.patch(
             grades,
         } = gradeSubmissionBody;
 
-        const gradeSubmission = await GradeSubmission.findById(gradeSubmissionId);
+        const gradeSubmission = await GradeSubmission.findOne({
+            _id: gradeSubmissionId,
+            status: 'pending',
+        });
         if (!gradeSubmission) {
             c.status(statusCodes.NOT_FOUND);
             return c.json(generateRecordNotExistsReponse('Grade Submission'));
@@ -383,8 +380,8 @@ app.patch(
                 subject_id,
                 semester_id: semester._id,
                 student_id,
-                ...(quarter === 1 && { quarter_1: gradeVal }),
-                ...(quarter === 2 && { quarter_2: gradeVal }),
+                quarter,
+                grade: gradeVal,
                 created_by: teacher._id,
             };
         }));

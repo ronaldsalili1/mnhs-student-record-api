@@ -19,6 +19,7 @@ const schema = new Schema(
         track: { type: String, required: true, enum: commonEnums.student.track },
         strand: { type: String, required: true, enum: commonEnums.student.strand },
         shs_graduation_date: { type: Date },
+        last_login_at: { type: Date },
         created_by: { type: Schema.Types.ObjectId },
         updated_by: { type: Schema.Types.ObjectId },
     },

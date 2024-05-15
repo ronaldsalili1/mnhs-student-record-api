@@ -12,6 +12,7 @@ import importAll from './helpers/importAll.js';
 
 const adminRoutes = await importAll('/routes/admin');
 const teacherRoutes = await importAll('/routes/teacher');
+const studentRoutes = await importAll('/routes/student');
 const workerRoutes = await importAll('/routes/worker');
 
 const app = new Hono();
@@ -31,6 +32,7 @@ app.use('*', cors({
 const routes = {
     admin: adminRoutes,
     teacher: teacherRoutes,
+    student: studentRoutes,
     worker: workerRoutes,
 };
 for (const routeKey in routes) {

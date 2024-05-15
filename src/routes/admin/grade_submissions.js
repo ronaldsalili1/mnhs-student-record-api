@@ -133,12 +133,6 @@ app.get(
                 student._id.toString() === grade.student_id._id.toString()
             ));
 
-            if (gradeSubmission.quarter === 1) {
-                grade.grade = grade.quarter_1;
-            } else if (gradeSubmission.quarter === 2) {
-                grade.grade = grade.quarter_2;
-            }
-
             grade.student = student;
             delete grade.student_id;
         });

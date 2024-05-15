@@ -85,9 +85,17 @@ app.get(
             const subjectStudent = subjectStudents
             // eslint-disable-next-line max-len
                 .find((subjectStudent) => subjectStudent.student_id.toString() === student._id.toString());
-            const grade = grades.find((grade) => (
+            const gradeData = grades.filter((grade) => (
                 grade.student_id.toString() === student._id.toString()
             ));
+            const grade = {};
+            gradeData.forEach((data) => {
+                if (data.quarter === 1) {
+                    grade.quarter_1 = data.grade;
+                } else if (data.quarter === 2) {
+                    grade.quarter_2 = data.grade;
+                }
+            });
 
             student.subject_student_id = subjectStudent._id;
             student.grade = grade;

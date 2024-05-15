@@ -13,6 +13,7 @@ export default {
             'account_creation',
             'password_reset_request',
             'grade_submission',
+            'otp_request',
         ],
         status: [
             'queued',

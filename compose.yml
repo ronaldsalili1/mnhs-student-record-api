@@ -37,6 +37,25 @@ services:
           target: /app
           action: sync
   
+  mnhs-student-record-student:
+    container_name: mnhs-student-record-student
+    depends_on:
+      - mnhs-student-record-api
+    build: ../mnhs-student-record-student
+    ports:
+      - 3003:3003
+    environment:
+      - NODE_ENV=development
+    develop:
+      watch:
+        - path: ../mnhs-student-record-student/package.json
+          action: rebuild
+        - path: ../mnhs-student-record-student/package-lock.json
+          action: rebuild
+        - path: ../mnhs-student-record-student
+          target: /app
+          action: sync
+  
   mnhs-student-record-api:
     container_name: mnhs-student-record-api
     depends_on:

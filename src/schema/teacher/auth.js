@@ -39,7 +39,7 @@ export const passwordResetRequestSchema = z.object({
         }),
     old_token: z
         .string({
-            invalid_type_error: 'Email must be a string',
+            invalid_type_error: 'Token must be a string',
         })
         .optional(),
 });
